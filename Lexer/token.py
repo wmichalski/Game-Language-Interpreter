@@ -15,6 +15,8 @@ keyword_types = {
     "choice": "CHOICE",
     "forEachPlayer": "FOR_EACH_PLAYER",
     "roll": "ROLL",
+    "else": "ELSE",
+    "break": "BREAK",
     "PLAYERS": "PLAYERS",
     "GAME": "GAME",
     "INDIVIDUAL": "INDIVIDUAL",
@@ -24,22 +26,23 @@ keyword_types = {
 }
 
 accepted_special_signs = {
-    "(": "( OPERATOR",
-    ")": ") OPERATOR",
-    "{": "{ OPERATOR",
-    "}": "} OPERATOR",
-    "+": "+/- OPERATOR",
-    "-": "+/- OPERATOR",
-    "*": "*// OPERATOR",
-    "/": "*// OPERATOR",
-    "=": "= OPERATOR",
-    "<": "< OPERATOR",
-    ">": "> OPERATOR",
-    "[": "[ OPERATOR",
-    "]": "] OPERATOR",
-    ":": ": OPERATOR",
-    "!": "! OPERATOR",
-    ";": "; OPERATOR"
+    "(": "LEFT_ROUND",
+    ")": "RIGHT_ROUND",
+    "{": "LEFT_CURLY",
+    "}": "RIGHT_CURLY",
+    "+": "PLUS",
+    "-": "MINUS",
+    "*": "MULTIPLICATION",
+    "/": "DIVISION",
+    "=": "ASSIGNMENT",
+    "<": "LOWER",
+    ">": "GREATER",
+    "[": "LEFT_SQUARE",
+    "]": "RIGHT_SQUARE",
+    ":": "COLON",
+    "!": "LOGICAL_NOT",
+    ";": "SEMICOLON",
+    ",": "COMMA"
 }
 
 comparison_operators = {

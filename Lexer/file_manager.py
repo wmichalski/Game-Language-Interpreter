@@ -29,10 +29,24 @@ class FileManager:
 
     def peek_chars(self, n=1):
         if n < 0:
-            raise ValueError("cant get negative number of chars")
+            raise ValueError("cant peek negative number of chars")
 
         position = self.file.tell()
         chars = self.file.read(n)
         self.file.seek(position, os.SEEK_SET)
 
         return chars
+
+    def get_position(self):
+        return self.file.tell()
+
+    def get_errory_part(self, position, range):
+        base_position = self.file.tell()
+
+        left = max(0, position-range)
+        self.file.seek(left, os.SEEK_SET)
+        errory_part = self.get_chars(range*2)
+
+        self.file.seek(base_position, os.SEEK_SET)
+
+        return errory_part

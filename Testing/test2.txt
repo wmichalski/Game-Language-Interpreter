@@ -1,0 +1,26 @@
+PLAYERS 2
+
+GAME:
+tokens = 10;
+finished = 0;
+
+INDIVIDUAL:
+score = 0;
+
+FUNCTIONS:
+def getScore(playerscore, gametokens)
+{
+    var retScore;
+    retScore = 2*playerscore - gametokens;
+    return retScore;
+}
+
+RUN:
+forEachPlayer(1)
+{
+    player.won = 1;
+    break;
+}
+
+WIN:
+[won == 1]

@@ -1,7 +1,7 @@
 import argparse
-from Lekser.file_manager import FileManager
-from Lekser.tokeniser import Tokeniser
-from Lekser.token import Token
+from Lexer.file_manager import FileManager
+from Lexer.tokeniser import Tokeniser
+from Lexer.token import Token
 
 def run(path):
     file_manager = FileManager(path)
@@ -12,12 +12,13 @@ def run(path):
         while (analysed_tokens[-1].type is not "END_OF_FILE"):
             analysed_tokens.append(tokeniser.get_token())
 
+    analysed_tokens = analysed_tokens[1:]
     print_tokens(analysed_tokens)
 
 def print_tokens(analysed_tokens):
-    format_string = "{:<30} | {:<20}"
+    format_string = "({:<30} {:<20}),"
     for token in analysed_tokens:
-        print(format_string.format(token.value, token.type))
+        print(format_string.format("\"" + token.type + "\",", "\"" + token.value + "\""))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='game language interpreter')
