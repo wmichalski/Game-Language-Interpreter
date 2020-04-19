@@ -9,4 +9,4 @@ Run acceptance tests with
 ```python3 -m unittest Testing/acceptance_testing.py```
 
 Run program with your own script with
-```program3 main.py [name of file]```
+```python3 main.py [name of file]```
