@@ -5,7 +5,7 @@ forEachPlayer(!player.inPrison)
 
 forEachPlayer(player.inPrison)
 {
-    if(roll(4) == 4)
+    if(roll(4) == 1)
     {
         player.inPrison = 0;
     }

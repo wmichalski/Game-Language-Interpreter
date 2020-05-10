@@ -4,7 +4,7 @@ class Node():
     def __init__(self, tokens):
         self.tokens = tokens
         self.value = None
-        pass
+        self.looped = -1
 
     def peekToken(self, depth = -1):
         return self.tokens[depth].type
@@ -68,6 +68,9 @@ class Node():
         if self.peekToken() in ["REAL_NUMBER", "NATURAL_NUMBER", "IDENTIFIER", "ROLL", "MINUS", "LOGICAL_NOT"]:
             return LogicalOrNode(self.tokens)
 
+        if self.looped == len(self.tokens):
+            raise SyntaxError("Infinite loop. Some issue with a token: " + self.tokens[-1].type + " - " + self.tokens[-1].value)
+        self.looped = len(self.tokens)
         return doNothing(self.tokens)
         
 class doNothing(Node):
@@ -81,27 +84,22 @@ class WhileNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken() != "WHILE":
-            pass
-        if self.popToken() != "LEFT_ROUND":
-            pass
-        self.children.append(Condition(self.tokens))
-        if self.popToken() != "RIGHT_ROUND":
-            pass
-        if self.popToken() != "LEFT_CURLY":
-            pass
-        self.children.append(BlockOfCode(self.tokens))
-        if self.popToken() == "RIGHT_CURLY":
-            pass
+        if self.popToken().type != "WHILE":
+            raise SyntaxError("WHILE seems not to have a WHILE. How?")
+        if self.popToken().type != "LEFT_ROUND":
+            raise SyntaxError("ROLL seems not to have a (")
 
-# class WhileBody(Node):
-#     def __init__(self, tokens):
-#         super().__init__(tokens)
-#         self.children = []
-#         self.parse()
-    
-#     def parse(self):
-#         self.children.append(super().create_subtree(self.tokens)) 
+        self.children.append(Condition(self.tokens))
+
+        if self.popToken().type != "RIGHT_ROUND":
+            raise SyntaxError("ROLL seems not to have a )")
+        if self.popToken().type != "LEFT_CURLY":
+            raise SyntaxError("ROLL seems not to have a {")
+
+        self.children.append(BlockOfCode(self.tokens))
+
+        if self.popToken() == "RIGHT_CURLY":
+            raise SyntaxError("ROLL seems not to have a }")
 
 class BlockOfCode(Node):
     def __init__(self, tokens):
@@ -125,11 +123,11 @@ class RollNode(Node):
     
     def parse(self):
         self.popToken() # ROLL
-        if self.popToken() != "LEFT_ROUND":
-            pass
+        if self.popToken().type != "LEFT_ROUND":
+            raise SyntaxError("ROLL seems not to have a (")
         self.children.append(super().create_subtree(self.tokens)) 
         if self.popToken() == "RIGHT_ROUND":
-            pass
+            raise SyntaxError("ROLL seems not to have a )")
         
 
 class BreakNode(Node):
@@ -159,8 +157,9 @@ class VariableInitNode(Node):
         self.parse(tokens)
     
     def parse(self, tokens):
-        if self.popToken() != "VAR":
-            pass
+        if self.popToken().type != "VARIABLE_ASSIGN":
+            raise SyntaxError("VAR seems not to have a VAR. How?")
+
         self.name = self.popToken().value
         if self.peekToken() == "ASSIGNMENT":
             self.popToken()
@@ -194,23 +193,29 @@ class FunctionInitNode(Node):
 
     def parse(self):
         if(self.popToken().type != "FUNCTION_DEF"):
-            pass
+            raise SyntaxError("FUNCTION_DEF seems not to have a FUNCTION_DEF. How?")
+
         if(self.peekToken() == "IDENTIFIER"):
             self.name = self.popToken().value
+
         if(self.popToken().type != "LEFT_ROUND"):
-            pass
+            raise SyntaxError("FUNCTION_DEF seems not to have a (")
+
         while(self.peekToken() != "RIGHT_ROUND"):
             self.children.append(self.popToken())
             if self.peekToken() == "COMMA":
                 self.popToken()
+                
         if(self.popToken().type != "RIGHT_ROUND"):
-            pass
+            raise SyntaxError("FUNCTION_DEF seems not to have a )")
 
         if(self.popToken().type != "LEFT_CURLY"):
-            pass
+            raise SyntaxError("FUNCTION_DEF seems not to have a {")
+
         self.children.append(BlockOfCode(self.tokens))
+
         if(self.popToken().type != "RIGHT_CURLY"):
-            pass
+            raise SyntaxError("FUNCTION_DEF seems not to have a }")
 
     def get_name(self):
         return self.name
@@ -223,18 +228,22 @@ class ForEachPlayerNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken() != "FOR_EACH_PLAYER":
-            pass
-        if self.popToken() != "LEFT_ROUND":
-            pass
+        if self.popToken().type != "FOR_EACH_PLAYER":
+            raise SyntaxError("FOREACHPLAYER seems not to have a FOREACHPLAYER. How?")
+        if self.popToken().type != "LEFT_ROUND":
+            raise SyntaxError("FOREACHPLAYER seems not to have a (.")
+
         self.children.append(Condition(self.tokens))
-        if self.popToken() == "RIGHT_ROUND":
-            pass
-        if self.popToken() == "LEFT_CURLY":
-            pass
+
+        if self.popToken().type != "RIGHT_ROUND":
+            raise SyntaxError("FOREACHPLAYER seems not to have a ).")
+        if self.popToken().type != "LEFT_CURLY":
+            raise SyntaxError("FOREACHPLAYER seems not to have a {.")
+
         self.children.append(BlockOfCode(self.tokens))
+
         if self.popToken() == "RIGHT_CURLY":
-            pass
+            raise SyntaxError("FOREACHPLAYER seems not to have a }.")
 
 class IfNode(Node):
     def __init__(self, tokens):
@@ -243,25 +252,32 @@ class IfNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken() != "IF":
-            pass
-        if self.popToken() != "LEFT_ROUND":
-            pass
+        if self.popToken().type != "IF":
+            raise SyntaxError("IF seems not to have an IF. How?")
+        if self.popToken().type != "LEFT_ROUND":
+            raise SyntaxError("IF seems not to have a (.")
+
         self.children.append(Condition(self.tokens))
-        if self.popToken() != "RIGHT_ROUND":
-            pass
-        if self.popToken() != "LEFT_CURLY":
-            pass
+
+        if self.popToken().type != "RIGHT_ROUND":
+            raise SyntaxError("IF seems not to have a ).")
+        if self.popToken().type != "LEFT_CURLY":
+            raise SyntaxError("IF seems not to have a {.")
+
         self.children.append(BlockOfCode(self.tokens))
+
         if self.popToken() == "RIGHT_CURLY":
-            pass
+            raise SyntaxError("IF seems not to have a }.")
+
         if self.peekToken() == "ELSE":
             self.popToken() 
-            if self.popToken() != "LEFT_CURLY":
-                pass
+            if self.popToken().type != "LEFT_CURLY":
+                raise SyntaxError("ELSE seems not to have a {.")
+
             self.children.append(BlockOfCode(self.tokens))
-            if self.popToken() != "RIGHT_CURLY":
-                pass
+
+            if self.popToken().type != "RIGHT_CURLY":
+                raise SyntaxError("ELSE seems not to have a }.")
 
 class Condition(Node):
     def __init__(self, tokens):
@@ -272,34 +288,10 @@ class Condition(Node):
     def parse(self, tokens):
         self.children.append(super().create_subtree(self.tokens))
 
-# class IfBody(Node):
-#     def __init__(self, tokens):
-#         super().__init__(tokens)
-#         self.children = []
-#         self.parse(tokens)
-    
-#     def parse(self, tokens):
-#         self.children.append(super().create_subtree(self.tokens))
-
-# class IfElseBody(Node):
-#     def __init__(self, tokens):
-#         super().__init__(tokens)
-#         self.children = []
-#         self.parse(tokens)
-    
-#     def parse(self, tokens):
-#         self.children.append(super().create_subtree(self.tokens))
-
 class ProgramNode(Node):
     # note for self: ignore "RUN:" tokens etc
     def __init__(self, tokens):
         super().__init__(tokens)
-        # self.players_info = None
-        # self.global_values = None
-        # self.individual_values = None
-        # self.function_declarations = None
-        # self.run = None
-        # self.win_condition = None
         self.children = []
 
         self.parse()
@@ -307,18 +299,6 @@ class ProgramNode(Node):
     def parse(self):
         while(self.peekToken() != "END_OF_FILE"):
             self.children.append(super().create_subtree(self.tokens))
-
-# class AssignmentNode(Node):
-#     def __init__(self, left):
-#         super().__init__(tokens)
-#         self.left = left
-#         self.right = None
-#         self.parse()
-
-#     def parse(self):
-#         if self.popToken() != "ASSIGNMENT":
-#             pass
-#         self.right = super().create_subtree(self.tokens)
 
 class ChoiceStatementNode(Node):
     def __init__(self, tokens):
@@ -328,17 +308,21 @@ class ChoiceStatementNode(Node):
     
     def parse(self):
         self.popToken() # CHOICE
-        if self.popToken() != "LEFT_ROUND":
-            pass
+        if self.popToken().type != "LEFT_ROUND":
+            raise SyntaxError("Choice init seems not to have a (")
+
         self.children.append(super().create_subtree(self.tokens))
-        if self.popToken() != "RIGHT_ROUND":
-            pass
-        if self.popToken() != "LEFT_CURLY":
-            pass
+
+        if self.popToken().type != "RIGHT_ROUND":
+            raise SyntaxError("Choice init seems not to have a )")
+        if self.popToken().type != "LEFT_CURLY":
+            raise SyntaxError("Choice init seems not to have a {")
+
         while self.peekToken() != "RIGHT_CURLY":
             self.children.append(ChoiceNode(self.tokens))
-        if self.popToken() != "RIGHT_CURLY":
-            pass
+
+        if self.popToken().type != "RIGHT_CURLY":
+            raise SyntaxError("Choice init seems not to have a }")
 
 class ChoiceNode(Node):
     def __init__(self, tokens):
@@ -348,25 +332,20 @@ class ChoiceNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken() != "LEFT_SQUARE":
-            pass
+        if self.popToken().type != "LEFT_SQUARE":
+            raise SyntaxError("Choice seems not to have a [")
+
         self.children.append(Condition(self.tokens))
-        if self.popToken() != "RIGHT_SQUARE":
-            pass
-        if self.popToken() != "LEFT_CURLY":
-            pass
+
+        if self.popToken().type != "RIGHT_SQUARE":
+            raise SyntaxError("Choice seems not to have a ]")
+        if self.popToken().type != "LEFT_CURLY":
+            raise SyntaxError("Choice seems not to have a {")
+
         self.children.append(BlockOfCode(self.tokens))
-        if self.popToken() != "RIGHT_CURLY":
-            pass
 
-
-
-class FunctionNode(Node):
-    def __init__(self, parent):
-        super().__init__(self)
-        self.name = None
-        self.args = None
-        self.body = None
+        if self.popToken().type != "RIGHT_CURLY":
+            raise SyntaxError("Choice seems not to have a }")
 
 class LogicalOrNode(Node):
     def __init__(self, tokens):
@@ -446,22 +425,20 @@ class FunctionCallNode(Node):
     def parse(self):
         if(self.peekToken() == "IDENTIFIER"):
             self.name = self.popToken().value
+
         if(self.popToken().type != "LEFT_ROUND"):
-            pass
+            raise SyntaxError("Function call seems not to have a (")
+
         while(self.peekToken() != "RIGHT_ROUND"):
             self.children.append(super().create_subtree(self.tokens))
             if self.peekToken() == "COMMA":
                 self.popToken()
+
         if(self.popToken().type != "RIGHT_ROUND"):
-            pass
+            raise SyntaxError("Function call seems not to have a )")
 
     def get_name(self):
         return self.name
-
-# class ReturnNode(Node):
-#     def __init__(self, parent):
-#         super().__init__(self)
-#         self.expression = None
 
 class LogicalNot(Node):
     def __init__(self, tokens):
@@ -547,11 +524,13 @@ class BracketedExpression(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken() == "LEFT_ROUND":
-            pass
+        if self.popToken().type != "LEFT_ROUND":
+            raise SyntaxError("Bracketed expression seems not to be open")
+
         self.children.append(super().create_subtree(self.tokens))
-        if self.popToken() == "RIGHT_ROUND":
-            pass
+
+        if self.popToken().type != "RIGHT_ROUND":
+            raise SyntaxError("Bracketed expression seems not to be closed")
 
 class PlayersHeaderNode(Node):
     def __init__(self, tokens):
@@ -560,8 +539,8 @@ class PlayersHeaderNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken() != "PLAYERS":
-            pass
+        if self.popToken().type != "PLAYERS":
+            raise SyntaxError("Missing PLAYERS in PLAYERS. How?")
         
         self.children.append(super().create_subtree(self.tokens))
 
@@ -572,10 +551,11 @@ class GameHeaderNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken() != "GAME":
-            pass
-        if self.popToken() != "COLON":
-            pass
+        if self.popToken().type != "GAME":
+            raise SyntaxError("Missing GAME in GAME. How?")
+        if self.popToken().type != "COLON":
+            raise SyntaxError("Missing COLON after WIN. How?")
+
         while self.peekToken() not in header_names:
             self.children.append(VariableInitNode(self.tokens))
             if self.peekToken() == "SEMICOLON":
@@ -588,10 +568,11 @@ class IndividualHeaderNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken() != "INDIVIDUAL":
-            pass
-        if self.popToken() != "COLON":
-            pass
+        if self.popToken().type != "INDIVIDUAL":
+            raise SyntaxError("Missing INDIVIDUAL in INDIVIDUAL. How?")
+        if self.popToken().type != "COLON":
+            raise SyntaxError("Missing colon after  WIN.")
+
         while self.peekToken() not in header_names:
             self.children.append(VariableInitNode(self.tokens))
             if self.peekToken() == "SEMICOLON":
@@ -604,10 +585,11 @@ class FunctionsHeaderNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken() != "FUNCTIONS":
-            pass
-        if self.popToken() != "COLON":
-            pass
+        if self.popToken().type != "FUNCTIONS":
+            raise SyntaxError("Missing FUNCTIONS in FUNCTIONS. How?")
+        if self.popToken().type != "COLON":
+            raise SyntaxError("Missing colon after FUNCTIONS.")
+
         while self.peekToken() not in header_names:
             self.children.append(FunctionInitNode(self.tokens))
             if self.peekToken() == "SEMICOLON":
@@ -620,10 +602,11 @@ class RunHeaderNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken() != "RUN":
-            pass
-        if self.popToken() != "COLON":
-            pass
+        if self.popToken().type != "RUN":
+            raise SyntaxError("Missing RUN in RUN. How?")
+        if self.popToken().type != "COLON":
+            raise SyntaxError("Missing colon after RUN.")
+
         self.children.append(BlockOfCode(self.tokens))
 
 class WinHeaderNode(Node):
@@ -633,12 +616,14 @@ class WinHeaderNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken() != "WIN":
-            pass
-        if self.popToken() != "COLON":
-            pass
-        if self.popToken() != "[":
-            pass
+        if self.popToken().type != "WIN":
+            raise SyntaxError("Missing WIN in WIN. How?")
+        if self.popToken().type != "COLON":
+            raise SyntaxError("Missing colon after WIN.")
+        if self.popToken().type != "LEFT_SQUARE":
+            raise SyntaxError("Missing [ after WIN:.")
+
         self.children.append(Condition(self.tokens))
-        if self.popToken() != "]":
-            pass
+
+        if self.popToken().type != "RIGHT_SQUARE":
+            raise SyntaxError("Missing ] after WIN.")
