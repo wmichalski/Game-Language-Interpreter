@@ -69,9 +69,15 @@ class Node():
             return LogicalOrNode(self.tokens)
 
         if self.looped == len(self.tokens):
-            raise SyntaxError("Infinite loop. Some issue with a token: " + self.tokens[-1].type + " - " + self.tokens[-1].value)
+            if self.peekToken() == "SEMICOLON":
+                self.popToken()
+                return doNothing(self.tokens)
+            else:
+                raise SyntaxError("Infinite loop. Some issue with a token: " + self.tokens[-1].type + " - " + self.tokens[-1].value)
+
         self.looped = len(self.tokens)
-        return doNothing(self.tokens)
+        return self.create_subtree(self.tokens)
+        
         
 class doNothing(Node):
     def __init__(self, tokens):
@@ -113,6 +119,8 @@ class BlockOfCode(Node):
             if self.peekToken() == "SEMICOLON":
                 self.popToken()
             if self.peekToken() == "WIN":
+                break
+            if self.peekToken() == "END_OF_FILE":
                 break
 
 class RollNode(Node):
