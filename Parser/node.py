@@ -71,10 +71,11 @@ class WhileNode(Node):
         if self.popToken() != "LEFT_ROUND":
             pass
         self.children.append(Condition(self.tokens))
-        if self.popToken() == "RIGHT_ROUND":
+        if self.popToken() != "RIGHT_ROUND":
             pass
-        if self.popToken() == "LEFT_CURLY":
-            self.children.append(BlockOfCode(self.tokens))
+        if self.popToken() != "LEFT_CURLY":
+            pass
+        self.children.append(BlockOfCode(self.tokens))
         if self.popToken() == "RIGHT_CURLY":
             pass
 
@@ -212,7 +213,8 @@ class ForEachPlayerNode(Node):
         if self.popToken() == "RIGHT_ROUND":
             pass
         if self.popToken() == "LEFT_CURLY":
-            self.children.append(WhileBody(self.tokens))
+            pass
+        self.children.append(BlockOfCode(self.tokens))
         if self.popToken() == "RIGHT_CURLY":
             pass
 
@@ -315,7 +317,6 @@ class ChoiceStatementNode(Node):
             pass
         if self.popToken() != "LEFT_CURLY":
             pass
-        # iterowanie choice node
         while self.peekToken() != "RIGHT_CURLY":
             self.children.append(ChoiceNode(self.tokens))
         if self.popToken() != "RIGHT_CURLY":
@@ -336,7 +337,7 @@ class ChoiceNode(Node):
             pass
         if self.popToken() != "LEFT_CURLY":
             pass
-        # block of code
+        self.children.append(BlockOfCode(self.tokens))
         if self.popToken() != "RIGHT_CURLY":
             pass
 

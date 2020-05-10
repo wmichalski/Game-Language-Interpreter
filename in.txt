@@ -4,11 +4,11 @@ while(!finished)
     {
         choice (20)
         {
-            [roll>=20 and (chosen.score>=3)] {player.score = player.score + roll(5);
+            [rolled>=20 and (chosen.score>=3)] {player.score = player.score + roll(5);
             chosen.score = chosen.score - 3;}
-            [roll>=18 and (tokens>=1)] {player.score = player.score + 2; tokens =
+            [rolled>=18 and (tokens>=1)] {player.score = player.score + 2; tokens =
             tokens - 1;}
-            [roll>=15] {player.score += 1;}
+            [rolled>=15] {player.score = player.score + 1;}
         }
         if (player.score > 20)
         {
