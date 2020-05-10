@@ -39,9 +39,7 @@ class ForEachPlayerNode(Node):
 class IfNode(Node):
     def __init__(self, tokens):
         super().__init__(tokens)
-        self.cond = None
-        self.body = None
-        self.else_body = None
+        self.children = []
         self.parse()
 
     def parse(self):
@@ -49,20 +47,47 @@ class IfNode(Node):
             pass
         if self.popToken() != "LEFT_ROUND":
             pass
-        self.cond = super().create_subtree(self.tokens)
+        self.children.append(Condition(self.tokens))
         if self.popToken() == "RIGHT_ROUND":
             pass
         if self.popToken() == "LEFT_CURLY":
-            self.body = super().create_subtree(self.tokens)
+            self.children.append(IfBody(self.tokens))
         if self.popToken() == "RIGHT_CURLY":
             pass
         if self.peekToken() == "ELSE":
             self.popToken() 
             if self.popToken() != "LEFT_CURLY":
                 pass
-            self.else_body = super().create_subtree(self.tokens)
+            self.children.append(IfElseBody(self.tokens))
             if self.popToken() != "RIGHT_CURLY":
                 pass
+
+class Condition(Node):
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        self.children = []
+        self.parse(tokens)
+    
+    def parse(self, tokens):
+        self.children.append(super().create_subtree(self.tokens))
+
+class IfBody(Node):
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        self.children = []
+        self.parse(tokens)
+    
+    def parse(self, tokens):
+        self.children.append(super().create_subtree(self.tokens))
+
+class IfElseBody(Node):
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        self.children = []
+        self.parse(tokens)
+    
+    def parse(self, tokens):
+        self.children.append(super().create_subtree(self.tokens))
 
 class ProgramNode(Node):
     # note for self: ignore "RUN:" tokens etc
@@ -127,8 +152,8 @@ class LogicalOrNode(Node):
             self.popToken()
             self.children.append(LogicalAndNode(self.tokens))
 
-        if len(self.children) == 1:
-            self.children = list(self.children[0].children)
+        # if len(self.children) == 1:
+        #     self.children = list(self.children[0].children)
 
 
 class LogicalAndNode(Node):
@@ -145,8 +170,8 @@ class LogicalAndNode(Node):
             self.popToken()
             self.children.append(LogicalCompareNode(self.tokens))
 
-        if len(self.children) == 1:
-            self.children = list(self.children[0].children)
+        # if len(self.children) == 1:
+        #     self.children = list(self.children[0].children)
 
 class LogicalNegationNode(Node):
     def __init__(self, tokens):
@@ -164,27 +189,27 @@ class LogicalNegationNode(Node):
 class LogicalCompareNode(Node):
     def __init__(self, tokens):
         super().__init__(tokens)
-        self.operation = None
         self.children = [LogicalNegationNode(tokens)]
 
         self.parse()
 
     def parse(self):
         if(self.peekToken() in ["EQUAL_TO", "NOT_EQUAL_TO", "LOWER_OR_EQUAL", "GREATER_OR_EQUAL", "LOWER", "GREATER"]):
-            self.operation = self.popToken()
+            self.children.append(self.popToken())
             self.children.append(LogicalNegationNode(self.tokens))
 
-        if len(self.children) == 1:
-            try:
-                self.children = list(self.children[0].children)
-            except:
-                pass
+        # if len(self.children) == 1:
+        #     try:
+        #         self.children = list(self.children[0].children)
+        #     except:
+        #         pass
 
 class FunctionCallNode(Node):
     def __init__(self, tokens):
         super().__init__(tokens)
         self.name = None
-        self.args = []
+        self.children = [] # args
+        
 
         self.parse()
 
@@ -194,11 +219,14 @@ class FunctionCallNode(Node):
         if(self.popToken().type != "LEFT_ROUND"):
             pass
         while(self.peekToken() != "RIGHT_ROUND"):
-            self.args.append(super().create_subtree(self.tokens))
+            self.children.append(super().create_subtree(self.tokens))
             if self.peekToken() == "COMMA":
                 self.popToken()
         if(self.popToken().type != "RIGHT_ROUND"):
             pass
+
+    def get_name(self):
+        return self.name
 
 # class ReturnNode(Node):
 #     def __init__(self, parent):
@@ -213,7 +241,6 @@ class FullMathExpressionNode(Node):
     # fullMathExpression = multiplication, { additionOperator, multiplication } ;
     def __init__(self, tokens):
         super().__init__(tokens)
-        self.value = None
         self.children = []
 
         self.children.append(MultiplicationNode(tokens))
@@ -224,14 +251,13 @@ class FullMathExpressionNode(Node):
             self.children.append(self.popToken())
             self.children.append(MultiplicationNode(self.tokens))
 
-        if len(self.children) == 1:
-            self.children = list(self.children[0].children)
+        # if len(self.children) == 1:
+        #     self.children = list(self.children[0].children)
 
 class MultiplicationNode(Node):
     # multiplication = partMathExpression, { multiplicationOperator, partMathExpression } ;
     def __init__(self, tokens):
         super().__init__(tokens)
-        self.value = None
         self.children = []
 
         self.children.append(PartMathExpressionNode(tokens))
@@ -242,11 +268,13 @@ class MultiplicationNode(Node):
             self.children.append(self.popToken())
             self.children.append(PartMathExpressionNode(self.tokens))
 
-        if len(self.children) == 1:
-            try:
-                self.children = list(self.children[0].children)
-            except:
-                pass
+        # if len(self.children) == 1:
+        #     try:
+        #         self.children = list(self.children[0].children)
+        #     except:
+        #         pass
+
+    
 
 
 class PartMathExpressionNode(Node):
@@ -254,36 +282,42 @@ class PartMathExpressionNode(Node):
     def __init__(self, tokens):
         super().__init__(tokens)
         self.is_negative = False
-        self.body = None
+        self.children = []
 
         self.parse()
 
     def parse(self):
         if(self.peekToken() == "MINUS"):
             self.popToken()
-            self.is_negative = True
+            self.children.append(NegativeNumber(self.tokens))
 
         if(self.peekToken() == "LEFT_ROUND"):
-            self.body = BracketedExpression(self.tokens)
+            self.children.append(BracketedExpression(self.tokens))
         elif(self.peekToken() in ["REAL_NUMBER", "NATURAL_NUMBER"]):
-            self.value = [self.popToken().value]
+            self.value = self.popToken().value
         elif(self.peekToken() == "IDENTIFIER"):
             if self.tokens[-2].type == "LEFT_ROUND":
-                self.body = FunctionCallNode(self.tokens)
+                self.children.append(FunctionCallNode(self.tokens))
             else:
                 self.value = self.popToken().value
 
-        
+    def get_value(self):
+        return self.value
+
+class NegativeNumber(Node):
+    def __init__(self, tokens):
+        super().__init__(tokens)
+
 class BracketedExpression(Node):
     def __init__(self, tokens):
         super().__init__(tokens)
-        self.body = None
+        self.children = []
         self.parse()
 
     def parse(self):
         if self.popToken() == "LEFT_ROUND":
             pass
-        self.body = super().create_subtree(self.tokens)
+        self.children.append(super().create_subtree(self.tokens))
         if self.popToken() == "RIGHT_ROUND":
             pass
 
