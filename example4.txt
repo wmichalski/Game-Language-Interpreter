@@ -1,0 +1,16 @@
+forEachPlayer(!player.inPrison)
+{
+    player.score = player.score + roll(6)
+}
+
+forEachPlayer(player.inPrison)
+{
+    if(roll(4) == 4)
+    {
+        player.inPrison = 0;
+    }
+    else
+    {
+        player.sad = 1;
+    }
+}

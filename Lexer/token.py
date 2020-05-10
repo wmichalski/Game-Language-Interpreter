@@ -52,6 +52,4 @@ comparison_operators = {
     ">=": "GREATER_OR_EQUAL"
 }
 
-nest_tokens = {
-    
-}
+header_names = ["PLAYERS", "GAME", "INDIVIDUAL", "FUNCTIONS", "RUN", "WIN", "END_OF_FILE"]

@@ -1,3 +1,21 @@
+PLAYERS 2
+
+GAME:
+var tokens = 10;
+var finished = 0;
+
+INDIVIDUAL:
+var xD = 1;
+
+FUNCTIONS:
+def getScore(playerscore, gametokens)
+{
+    var retScore;
+    retScore = 2*playerscore - gametokens;
+    return retScore;
+}
+
+RUN:
 while(!finished)
 {
     forEachPlayer(1)
@@ -18,3 +36,6 @@ while(!finished)
         }
     }
 }
+
+WIN:
+[won == 1]

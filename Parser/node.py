@@ -1,4 +1,4 @@
-from Lexer.token import Token
+from Lexer.token import Token, header_names
 
 class Node():
     def __init__(self, tokens):
@@ -29,14 +29,29 @@ class Node():
         if self.peekToken() == "BREAK":
             return BreakNode(self.tokens)
 
-        if self.peekToken() == "ROLL":
-            return RollNode(self.tokens)
-
         if self.peekToken() == "CHOICE":
             return ChoiceStatementNode(self.tokens)
 
         if self.peekToken() == "RETURN":
             return ReturnNode(self.tokens)
+
+        if self.peekToken() == "PLAYERS":
+            return PlayersHeaderNode(self.tokens)
+
+        if self.peekToken() == "GAME":
+            return GameHeaderNode(self.tokens)
+
+        if self.peekToken() == "INDIVIDUAL":
+            return IndividualHeaderNode(self.tokens)
+
+        if self.peekToken() == "FUNCTIONS":
+            return FunctionsHeaderNode(self.tokens)
+
+        if self.peekToken() == "RUN":
+            return RunHeaderNode(self.tokens)  
+
+        if self.peekToken() == "WIN":
+            return WinHeaderNode(self.tokens)  
 
         if self.peekToken() == "FOR_EACH_PLAYER":
             return ForEachPlayerNode(self.tokens)
@@ -95,11 +110,12 @@ class BlockOfCode(Node):
         self.parse()
 
     def parse(self):
-        print("XDDDDDD")
         while self.peekToken() != "RIGHT_CURLY":
             self.children.append(super().create_subtree(self.tokens)) 
             if self.peekToken() == "SEMICOLON":
                 self.popToken()
+            if self.peekToken() == "WIN":
+                break
 
 class RollNode(Node):
     def __init__(self, tokens):
@@ -177,6 +193,8 @@ class FunctionInitNode(Node):
         self.parse()
 
     def parse(self):
+        if(self.popToken().type != "FUNCTION_DEF"):
+            pass
         if(self.peekToken() == "IDENTIFIER"):
             self.name = self.popToken().value
         if(self.popToken().type != "LEFT_ROUND"):
@@ -190,7 +208,7 @@ class FunctionInitNode(Node):
 
         if(self.popToken().type != "LEFT_CURLY"):
             pass
-        # append block of code (?)
+        self.children.append(BlockOfCode(self.tokens))
         if(self.popToken().type != "RIGHT_CURLY"):
             pass
 
@@ -287,8 +305,8 @@ class ProgramNode(Node):
         self.parse()
 
     def parse(self):
-        self.children.append(super().create_subtree(self.tokens))
-        pass
+        while(self.peekToken() != "END_OF_FILE"):
+            self.children.append(super().create_subtree(self.tokens))
 
 # class AssignmentNode(Node):
 #     def __init__(self, left):
@@ -535,3 +553,92 @@ class BracketedExpression(Node):
         if self.popToken() == "RIGHT_ROUND":
             pass
 
+class PlayersHeaderNode(Node):
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        self.children = []
+        self.parse()
+
+    def parse(self):
+        if self.popToken() != "PLAYERS":
+            pass
+        
+        self.children.append(super().create_subtree(self.tokens))
+
+class GameHeaderNode(Node):
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        self.children = []
+        self.parse()
+
+    def parse(self):
+        if self.popToken() != "GAME":
+            pass
+        if self.popToken() != "COLON":
+            pass
+        while self.peekToken() not in header_names:
+            self.children.append(VariableInitNode(self.tokens))
+            if self.peekToken() == "SEMICOLON":
+                self.popToken()
+
+class IndividualHeaderNode(Node):
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        self.children = []
+        self.parse()
+
+    def parse(self):
+        if self.popToken() != "INDIVIDUAL":
+            pass
+        if self.popToken() != "COLON":
+            pass
+        while self.peekToken() not in header_names:
+            self.children.append(VariableInitNode(self.tokens))
+            if self.peekToken() == "SEMICOLON":
+                self.popToken()
+
+class FunctionsHeaderNode(Node):
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        self.children = []
+        self.parse()
+
+    def parse(self):
+        if self.popToken() != "FUNCTIONS":
+            pass
+        if self.popToken() != "COLON":
+            pass
+        while self.peekToken() not in header_names:
+            self.children.append(FunctionInitNode(self.tokens))
+            if self.peekToken() == "SEMICOLON":
+                self.popToken()
+
+class RunHeaderNode(Node):
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        self.children = []
+        self.parse()
+
+    def parse(self):
+        if self.popToken() != "RUN":
+            pass
+        if self.popToken() != "COLON":
+            pass
+        self.children.append(BlockOfCode(self.tokens))
+
+class WinHeaderNode(Node):
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        self.children = []
+        self.parse()
+
+    def parse(self):
+        if self.popToken() != "WIN":
+            pass
+        if self.popToken() != "COLON":
+            pass
+        if self.popToken() != "[":
+            pass
+        self.children.append(Condition(self.tokens))
+        if self.popToken() != "]":
+            pass
