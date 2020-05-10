@@ -15,6 +15,25 @@ def getScore(playerscore, gametokens)
     return retScore;
 }
 
+def funcWithNest(somevar)
+{
+    if(somevar>5)
+    {
+        if(somevar<=10)
+        {
+            somevar = 0;
+        }
+        else
+        {
+            if(somevar == 15)
+            {
+                somevar = -1;
+            }
+        }
+    }
+    return somevar;
+}
+
 RUN:
 while(!finished)
 {
