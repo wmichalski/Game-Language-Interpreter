@@ -1,6 +1,0 @@
-
-
-fullMathExpression = multiplication, { additionOperator, multiplication } ;
-multiplication = partMathExpression, { multiplicationOperator, partMathExpression } ;
-partMathExpression = [ "-" ], ( number | variableName | functionCall | bracketedExpression ) ;
-bracketedExpression = "(", fullMathExpression, ")"
