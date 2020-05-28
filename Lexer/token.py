@@ -17,6 +17,7 @@ keyword_types = {
     "roll": "ROLL",
     "else": "ELSE",
     "break": "BREAK",
+    "print": "PRINT",
     "PLAYERS": "PLAYERS",
     "GAME": "GAME",
     "INDIVIDUAL": "INDIVIDUAL",

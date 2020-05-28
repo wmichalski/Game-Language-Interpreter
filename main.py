@@ -18,9 +18,10 @@ def run(path):
     print_tokens(analysed_tokens)
 
     parsed = ProgramNode(analysed_tokens[::-1])
-    print("x")
     print_tree(parsed, 0)
 
+    print("==========")
+    parsed.execute()
 
 def print_tokens(analysed_tokens):
     format_string = "({:<30} {:<20}),"
@@ -43,7 +44,6 @@ def print_tree(node, depth):
             print_tree(child, depth+1)
     except:
         pass
-
 
 def print_node_name(node):
     try:

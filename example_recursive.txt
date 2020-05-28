@@ -1,0 +1,24 @@
+def nwd(c,d)
+{
+    if(c != d)
+    {
+        if(c>d)
+        {
+            return nwd(c-d, d);
+        }
+        else
+        {
+            return nwd(c, d-c);
+        }
+    }
+    else
+    {
+        return c;
+    }
+}
+
+print(nwd(28,70))
+print(nwd(1,12))
+print(nwd(66,102))
+print(nwd(12,18))
+print(nwd(10000, 1000))
