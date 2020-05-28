@@ -51,3 +51,5 @@ comparison_operators = {
     "<=": "LOWER_OR_EQUAL",
     ">=": "GREATER_OR_EQUAL"
 }
+
+header_names = ["PLAYERS", "GAME", "INDIVIDUAL", "FUNCTIONS", "RUN", "WIN", "END_OF_FILE"]
