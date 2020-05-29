@@ -43,7 +43,8 @@ accepted_special_signs = {
     ":": "COLON",
     "!": "LOGICAL_NOT",
     ";": "SEMICOLON",
-    ",": "COMMA"
+    ",": "COMMA",
+    "\"": "QUOTE"
 }
 
 comparison_operators = {

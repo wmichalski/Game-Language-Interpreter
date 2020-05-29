@@ -77,6 +77,9 @@ class Node():
         if self.peekToken() == "GAME":
             return GameHeaderNode(self.tokens)
 
+        if self.peekToken() == "TEXT":
+            return TextNode(self.tokens)
+
         if self.peekToken() == "INDIVIDUAL":
             return IndividualHeaderNode(self.tokens)
 
@@ -88,6 +91,9 @@ class Node():
 
         if self.peekToken() == "WIN":
             return WinHeaderNode(self.tokens)  
+
+        if self.peekToken() == "QUOTE":
+            pass
 
         if self.peekToken() == "PRINT":
             return PrintNode(self.tokens)
@@ -741,6 +747,19 @@ class PartMathExpressionNode(Node):
             return -1*self.children[1].execute()
         else:
             return self.children[0].execute()
+
+class TextNode(Node):
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        self.type = self.peekToken()
+        self.parse()
+
+    def parse(self):
+        self.value = self.popToken().value
+
+    def execute(self):
+        return self.value
+
 
 class ValueNode(Node):
     def __init__(self, tokens):

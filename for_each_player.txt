@@ -42,7 +42,13 @@ while(!finished)
 {
     forEachPlayer(1)
     {
-        player.xD = player.xD + roll(5);
+        var rolled = 0;
+        while(rolled < 10)
+        {
+            rolled = roll(20);
+        }
+        print("XD")
+        player.xD = player.xD + rolled;
         print(player.xD);
         if(player.xD > 20)
         {
@@ -50,11 +56,6 @@ while(!finished)
             break;
         }
     }
-}
-
-forEachPlayer(1)
-{
-    print(player.xD);
 }
 
 WIN:

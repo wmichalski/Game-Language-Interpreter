@@ -110,7 +110,15 @@ class Tokeniser:
             chars += self.fm.get_chars(2)
             return Token(comparison_operators[chars], chars)
 
+        if self.fm.peek_chars(1) == "\"":
+            self.fm.get_chars(1)
+            while self.fm.peek_chars(1) != "\"":
+                chars += self.fm.get_chars(1)
+            self.fm.get_chars(1)
+            return Token("TEXT", chars)
+
         chars += self.fm.get_chars(1)
+
         return Token(accepted_special_signs[chars], chars)
 
     def ignore_spaces(self):
