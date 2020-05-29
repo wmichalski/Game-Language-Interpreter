@@ -1,18 +1,19 @@
 class Player():
-    def __init__(self, vars):
-        self.variables = vars
+    def __init__(self):
+        self.variables = dict()
+        pass
 
     def getValue(self, varName):
-        for var in self.variables:
-            if var[0] == varName:
-                return var[1]
+        for key in self.variables:
+            if key == varName:
+                return self.variables[key]
         KeyError(varName + " was not found")
-        return 0
+        return None
 
     def setValue(self, varName, varValue):
-        for var in self.variables:
-            if var[0] == varName:
-                var[1] = varValue
+        for key in self.variables:
+            if key == varName:
+                self.variables[key] = varValue
         KeyError(varName + " was not found")
         return 0
 

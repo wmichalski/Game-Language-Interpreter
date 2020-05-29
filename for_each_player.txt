@@ -1,0 +1,55 @@
+PLAYERS 10
+
+GAME:
+var game.tokens = 10;
+var game.finished = 0;
+
+INDIVIDUAL:
+var player.xD = 1;
+
+FUNCTIONS:
+def getScore(playerscore, gametokens)
+{
+    var retScore;
+    retScore = 2*playerscore - gametokens;
+    return retScore;
+}
+
+def funcWithNest(somevar)
+{
+    if(somevar>5)
+    {
+        if(somevar<=10)
+        {
+            somevar = 0;
+        }
+        else
+        {
+            if(somevar == 15)
+            {
+                somevar = -1;
+            }
+        }
+    }
+    return somevar;
+}
+
+RUN:
+var finished = 0;
+
+while(!finished)
+{
+    forEachPlayer(1)
+    {
+        player.xD = player.xD + roll(5);
+        print(player.xD);
+        if(player.xD > 20)
+        {
+            finished = 1;
+            break;
+        }
+    }
+}
+
+WIN:
+[won == 1]

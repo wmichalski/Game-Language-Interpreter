@@ -1,12 +1,19 @@
 from Lexer.token import Token, header_names
 from Parser.function import Function
 from copy import deepcopy
+from Parser.player import Player
+from random import randrange
 
-globalVarDict = {}
+# localVarDict keeps either a dict of variables from the "RUN" section or from the called function
+localVarDict = {}
+gameVarDict = {}
+
 breakStatus = 0
 analysedFunc = Function("placeholder", "placeholder", "placeholder")
 analysedHeader = ""
 functions = []
+analysedPlayer = None
+players = []
 
 def pairwise(iterable):
     # https://stackoverflow.com/questions/4628290/pairs-from-single-list
@@ -14,18 +21,18 @@ def pairwise(iterable):
     return zip(a, a)
 
 def callFunction(funcObject, args):
-    global globalVarDict
+    global localVarDict
     global analysedFunc
 
     lastFunc = analysedFunc
-    lastVarDict = globalVarDict
+    lastVarDict = localVarDict
 
     analysedFunc = deepcopy(funcObject)
-    globalVarDict = analysedFunc.getVarDict(args)
+    localVarDict = analysedFunc.getVarDict(args)
     retValue = analysedFunc.execute()
 
     analysedFunc = lastFunc
-    globalVarDict = lastVarDict
+    localVarDict = lastVarDict
 
     return retValue
 
@@ -128,19 +135,19 @@ class WhileNode(Node):
         if self.popToken().type != "WHILE":
             raise SyntaxError("WHILE seems not to have a WHILE. How?")
         if self.popToken().type != "LEFT_ROUND":
-            raise SyntaxError("ROLL seems not to have a (")
+            raise SyntaxError("WHILE seems not to have a (")
 
         self.children.append(Condition(self.tokens))
 
         if self.popToken().type != "RIGHT_ROUND":
-            raise SyntaxError("ROLL seems not to have a )")
+            raise SyntaxError("WHILE seems not to have a )")
         if self.popToken().type != "LEFT_CURLY":
-            raise SyntaxError("ROLL seems not to have a {")
+            raise SyntaxError("WHILE seems not to have a {")
 
         self.children.append(BlockOfCode(self.tokens))
 
         if self.popToken() == "RIGHT_CURLY":
-            raise SyntaxError("ROLL seems not to have a }")
+            raise SyntaxError("WHILE seems not to have a }")
 
     def execute(self):
         global breakStatus
@@ -189,6 +196,9 @@ class RollNode(Node):
         self.children.append(super().create_subtree(self.tokens)) 
         if self.popToken() == "RIGHT_ROUND":
             raise SyntaxError("ROLL seems not to have a )")
+
+    def execute(self):
+        return randrange(self.children[0].execute())
 
 class PrintNode(Node):
     def __init__(self, tokens):
@@ -258,13 +268,13 @@ class VariableInitNode(Node):
 
     def execute(self):
         if "player." in self.name:
-            # TODO
-            # nie wiem czy trzeba bedzie to w ogole
-            # player.addVariable([self.name, self.children[0].execute()])
-            pass
+            for player in players:
+                player.addVariable([self.name, self.children[0].execute()])
+        elif "game." in self.name:
+            gameVarDict[self.name] = self.children[0]
         else:
             value = self.children[0].execute()
-            globalVarDict[self.name] = value
+            localVarDict[self.name] = value
 
 class VariableAssignmentNode(Node):
     def __init__(self, tokens):
@@ -284,12 +294,18 @@ class VariableAssignmentNode(Node):
 
     def execute(self):
         if "player." in self.name:
-            # TODO
-            # player.setValue(self.name, self.children[0].execute())
-            pass
+            if analysedPlayer.getValue(self.name) is not None:
+                analysedPlayer.setValue(self.name, self.children[0].execute())
+            else:
+                raise KeyError("Player doesn't have such a variable.", self.name)
+        elif "game." in self.name:
+            if self.name in gameVarDict:
+                gameVarDict[self.name] = self.children[0]
+            else:
+                raise KeyError("Game doesn't have such a variable.", self.name)
         else:
-            if self.name in globalVarDict:
-               globalVarDict[self.name] = self.children[0].execute()
+            if self.name in localVarDict:
+               localVarDict[self.name] = self.children[0].execute()
             else:
                KeyError("Variable" + self.name + "was not found")
 
@@ -357,6 +373,20 @@ class ForEachPlayerNode(Node):
         if self.popToken() == "RIGHT_CURLY":
             raise SyntaxError("FOREACHPLAYER seems not to have a }.")
 
+    def execute(self):
+        # not sure yet if breakStatus will collide with WhileNode if nested or not
+        global breakStatus
+        global analysedPlayer
+
+        if self.children[0].execute():
+            for player in players:
+                if breakStatus == 0:
+                    analysedPlayer = player
+                    self.children[1].execute()
+                    
+        breakStatus = 0
+        analysedPlayer = None
+
 class IfNode(Node):
     def __init__(self, tokens):
         super().__init__(tokens)
@@ -417,8 +447,8 @@ class ProgramNode(Node):
         super().__init__(tokens)
         self.children = []
         self.varDict = {}
-        global globalVarDict
-        globalVarDict = self.varDict
+        global localVarDict
+        localVarDict = self.varDict
 
         self.parse()
 
@@ -547,7 +577,7 @@ class LogicalNegationNode(Node):
         self.children.append(FullMathExpressionNode(self.tokens))
 
     def execute(self):
-        if self.children[0].__class__ == Token:
+        if self.children[0].__class__ == LogicalNot:
             if self.children[1].execute() != 0:
                 return 0
             else:
@@ -676,12 +706,6 @@ class MultiplicationNode(Node):
 
         return self.to_return
 
-        # if len(self.children) == 1:
-        #     try:
-        #         self.children = list(self.children[0].children)
-        #     except:
-        #         pass
-
 class PartMathExpressionNode(Node):
 # partMathExpression = [ "-" ], ( number | variableName | functionCall | bracketedExpression ) ;
     def __init__(self, tokens):
@@ -738,11 +762,20 @@ class ValueNode(Node):
                 return int(self.value)
 
         if self.type in ["IDENTIFIER"]:
-            try:
-                global globalVarDict
-                return globalVarDict[self.value]
-            except:
-                raise NameError(self.value + " was not found in variable dict")
+            if "player." in self.value:
+                return analysedPlayer.getValue(self.value)
+            elif "game." in self.value:
+                try:
+                    global gameVarDict
+                    return gameVarDict[self.value]
+                except:
+                    raise NameError("Variable not found in gamedict", self.value)
+            else:
+                try:
+                    global localVarDict
+                    return localVarDict[self.value]
+                except:
+                    raise NameError(self.value + " was not found in variable dict")
         return self.value
 
 class NegativeNumber(Node):
@@ -779,6 +812,10 @@ class PlayersHeaderNode(Node):
         
         self.children.append(super().create_subtree(self.tokens))
 
+    def execute(self):
+        for i in range(self.children[0].execute()):
+            players.append(Player())
+
 class GameHeaderNode(Node):
     def __init__(self, tokens):
         super().__init__(tokens)
@@ -795,6 +832,10 @@ class GameHeaderNode(Node):
             self.children.append(VariableInitNode(self.tokens))
             if self.peekToken() == "SEMICOLON":
                 self.popToken()
+
+    def execute(self):
+        for child in self.children:
+            child.execute()
 
 class IndividualHeaderNode(Node):
     def __init__(self, tokens):
@@ -813,6 +854,10 @@ class IndividualHeaderNode(Node):
             if self.peekToken() == "SEMICOLON":
                 self.popToken()
 
+    def execute(self):
+        for child in self.children:
+            child.execute()
+
 class FunctionsHeaderNode(Node):
     def __init__(self, tokens):
         super().__init__(tokens)
@@ -829,6 +874,10 @@ class FunctionsHeaderNode(Node):
             self.children.append(FunctionInitNode(self.tokens))
             if self.peekToken() == "SEMICOLON":
                 self.popToken()
+
+    def execute(self):
+        for child in self.children:
+            child.execute()
 
 class RunHeaderNode(Node):
     def __init__(self, tokens):
