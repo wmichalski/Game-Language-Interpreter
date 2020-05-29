@@ -6,6 +6,7 @@ var game.finished = 0;
 
 INDIVIDUAL:
 var player.xD = 1;
+var player.dupa = 999;
 
 FUNCTIONS:
 def getScore(playerscore, gametokens)
@@ -51,5 +52,10 @@ while(!finished)
     }
 }
 
+forEachPlayer(1)
+{
+    print(player.xD);
+}
+
 WIN:
-[won == 1]
+[player.xD > 20]

@@ -1,5 +1,6 @@
 class Player():
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.variables = dict()
         pass
 
@@ -19,3 +20,15 @@ class Player():
 
     def addVariable(self, varPair):
         self.variables[varPair[0]] = varPair[1]
+
+    def printInfo(self, isWon):
+        print(self.name, end='')
+        
+        if isWon == 1:
+            print(" - WINNER")
+        else:
+            print("")
+
+        for key in self.variables:
+            print("   " + key + " -- " + str(self.variables[key]))
+        print("")

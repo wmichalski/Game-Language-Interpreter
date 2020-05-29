@@ -383,7 +383,7 @@ class ForEachPlayerNode(Node):
                 if breakStatus == 0:
                     analysedPlayer = player
                     self.children[1].execute()
-                    
+
         breakStatus = 0
         analysedPlayer = None
 
@@ -814,7 +814,7 @@ class PlayersHeaderNode(Node):
 
     def execute(self):
         for i in range(self.children[0].execute()):
-            players.append(Player())
+            players.append(Player("Player " + str(i)))
 
 class GameHeaderNode(Node):
     def __init__(self, tokens):
@@ -915,3 +915,13 @@ class WinHeaderNode(Node):
 
         if self.popToken().type != "RIGHT_SQUARE":
             raise SyntaxError("Missing ] after WIN.")
+
+    def execute(self):
+        global analysedPlayer
+        for player in players:
+            analysedPlayer = player
+            if self.children[0].execute():
+                player.printInfo(1)
+            else:
+                player.printInfo(0)
+            
