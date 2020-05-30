@@ -1,0 +1,25 @@
+PLAYERS 3
+
+var player.tokens = 10
+
+RUN:
+forEachPlayer(1)
+{
+    print(player.name)
+    print(player.tokens)
+    choice(10)
+    {
+        [player.tokens > 10] {chosen.tokens = chosen.tokens - 2;}
+        [player.tokens == 10] {chosen.tokens = chosen.tokens - 1; player.tokens = player.tokens+1;}
+        [player.tokens < 10] {player.tokens = player.tokens + 1;}
+    }
+
+    print("===")
+    forEachPlayer(1)
+    {
+        print(player.name)
+        print(player.tokens)
+    }
+    print("======")
+}
+

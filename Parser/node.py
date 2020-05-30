@@ -3,6 +3,7 @@ from Parser.function import Function
 from copy import deepcopy
 from Parser.player import Player
 from random import randrange
+import random
 
 # localVarDict keeps either a dict of variables from the "RUN" section or from the called function
 localVarDict = {}
@@ -13,6 +14,7 @@ analysedFunc = Function("placeholder", "placeholder", "placeholder")
 analysedHeader = ""
 functions = []
 analysedPlayer = None
+chosenPlayer = None
 players = []
 
 def pairwise(iterable):
@@ -35,6 +37,12 @@ def callFunction(funcObject, args):
     localVarDict = lastVarDict
 
     return retValue
+
+def ChoosePolicy(selectables):
+    return random.choice(selectables)
+
+def ChoosePlayer():
+    return random.choice(players)
 
 class Node():
     def __init__(self, tokens):
@@ -301,6 +309,11 @@ class VariableAssignmentNode(Node):
                 analysedPlayer.setValue(self.name, self.children[0].execute())
             else:
                 raise KeyError("Player doesn't have such a variable.", self.name)
+        elif "chosen." in self.name:
+            if chosenPlayer.getValue(self.name.replace("chosen.", "player.")) is not None:
+                chosenPlayer.setValue(self.name.replace("chosen.", "player."), self.children[0].execute())
+            else:
+                raise KeyError("Chosen player doesn't have such a variable.", self.name)
         elif "game." in self.name:
             if self.name in gameVarDict:
                 gameVarDict[self.name] = self.children[0]
@@ -489,10 +502,23 @@ class ChoiceStatementNode(Node):
 
     def execute(self):
         selectable = []
-        for child in self.children:
+        localVarDict["rolled"] = randrange(self.children[0].execute())
+        for child in self.children[1:]:
+            # child's first child is condition:
             if child.children[0].execute():
                 selectable.append(child)
         # TODO select
+
+        if len(selectable) == 0:
+            return 0
+
+        global chosenPlayer
+        selected = ChoosePolicy(selectable)
+        chosenPlayer = ChoosePlayer()
+        selected.execute()
+        chosenPlayer = None
+
+        del localVarDict["rolled"]
 
 class ChoiceNode(Node):
     def __init__(self, tokens):
@@ -516,6 +542,9 @@ class ChoiceNode(Node):
 
         if self.popToken().type != "RIGHT_CURLY":
             raise SyntaxError("Choice seems not to have a }")
+
+    def execute(self):
+        self.children[1].execute()
 
 class LogicalOrNode(Node):
     def __init__(self, tokens):
@@ -804,6 +833,8 @@ class ValueNode(Node):
         if self.type in ["IDENTIFIER"]:
             if "player." in self.value:
                 return analysedPlayer.getValue(self.value)
+            elif "chosen." in self.value:
+                return chosenPlayer.getValue(self.value.replace("chosen.", "player."))
             elif "game." in self.value:
                 try:
                     global gameVarDict

@@ -9,15 +9,14 @@ class Player():
         for key in self.variables:
             if key == varName:
                 return self.variables[key]
-        KeyError(varName + " was not found")
-        return None
+        raise KeyError(varName + " was not found")
 
     def setValue(self, varName, varValue):
         for key in self.variables:
             if key == varName:
                 self.variables[key] = varValue
-        KeyError(varName + " was not found")
-        return 0
+                return 0
+        raise KeyError(varName + " was not found")
 
     def addVariable(self, varPair):
         self.variables[varPair[0]] = varPair[1]
