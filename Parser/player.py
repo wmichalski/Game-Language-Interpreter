@@ -2,6 +2,7 @@ class Player():
     def __init__(self, name):
         self.name = name
         self.variables = dict()
+        self.addVariable(["player.name", self.name])
         pass
 
     def getValue(self, varName):
@@ -30,5 +31,6 @@ class Player():
             print("")
 
         for key in self.variables:
-            print("   " + key + " -- " + str(self.variables[key]))
+            if key != "player.name":
+                print("   " + key + " -- " + str(self.variables[key]))
         print("")

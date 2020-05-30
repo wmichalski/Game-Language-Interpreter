@@ -537,7 +537,9 @@ class LogicalOrNode(Node):
         else:
             for element in self.children:
                 if element.__class__ != Token:
-                    if element.execute() == 1:
+                    if isinstance(element.execute(), str):
+                        raise TypeError("Seems like you are doing a logical OR operation on a string?")
+                    if element.execute() != 0:
                         return 1
             return 0
 
@@ -562,6 +564,8 @@ class LogicalAndNode(Node):
         else:
             for element in self.children:
                 if element.__class__ != Token:
+                    if isinstance(element.execute(), str):
+                        raise TypeError("Seems like you are doing a logical AND operation on a string?")
                     if element.execute() == 0:
                         return 0
             return 1
@@ -581,6 +585,8 @@ class LogicalNegationNode(Node):
 
     def execute(self):
         if self.children[0].__class__ == LogicalNot:
+            if isinstance(self.children[1].execute(), str):
+                raise TypeError("Seems like you are doing a logical NOT operation on a string?")
             if self.children[1].execute() != 0:
                 return 0
             else:
@@ -609,6 +615,10 @@ class LogicalCompareNode(Node):
     def execute(self):
         if len(self.children) == 1:
             return self.children[0].execute()
+
+        if isinstance(self.children[0].execute(), str):
+            raise TypeError("Seems like you are comparing a string?")
+
         else:
             lvalue = self.children[0].execute()
             rvalue = self.children[2].execute()
@@ -673,6 +683,10 @@ class FullMathExpressionNode(Node):
 
     def execute(self):
         self.to_return = self.children[0].execute()
+
+        if isinstance(self.to_return, str) and len(self.children) > 1:
+            raise TypeError("Seems like you are trying to do a math operation on a string, eh?")
+
         if len(self.children) > 1:
             for operation, element in pairwise(self.children[1:]):
                 if operation.value == "+":
@@ -700,6 +714,10 @@ class MultiplicationNode(Node):
     
     def execute(self):
         self.to_return = self.children[0].execute()
+
+        if isinstance(self.to_return, str) and len(self.children) > 1:
+            raise TypeError("Seems like you are trying to do a math operation on a string, eh?")
+
         if len(self.children) > 1:
             for operation, element in pairwise(self.children[1:]):
                 if operation.value == "*":
@@ -741,7 +759,10 @@ class PartMathExpressionNode(Node):
 
     def execute(self):
         if self.is_negative:
-            return -1*self.children[1].execute()
+            if isinstance(self.children[1].execute(), str):
+                raise TypeError("Seems like you are trying to get a negative of a string, eh?")
+            else:
+                return -1*self.children[1].execute()
         else:
             return self.children[0].execute()
 
@@ -753,6 +774,9 @@ class TextNode(Node):
 
     def parse(self):
         self.value = self.popToken().value
+
+    def get_value(self):
+        return self.value
 
     def execute(self):
         return self.value
