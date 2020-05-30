@@ -104,6 +104,12 @@ class Tokeniser:
 
         return Token("NATURAL_NUMBER", chars)
 
+    def last_char(self, chars):
+        if len(chars) == 0:
+            return None
+        else:
+            return chars[-1]
+
     def get_special_sign(self):
         chars = ""
         if self.fm.peek_chars(2) in comparison_operators:
@@ -112,7 +118,9 @@ class Tokeniser:
 
         if self.fm.peek_chars(1) == "\"":
             self.fm.get_chars(1)
-            while self.fm.peek_chars(1) != "\"":
+            while not (self.fm.peek_chars(1) == "\"" and self.last_char(chars) != "\\"):
+                if self.fm.peek_chars(1) == "\\":
+                    self.fm.get_chars(1)
                 chars += self.fm.get_chars(1)
             self.fm.get_chars(1)
             return Token("TEXT", chars)

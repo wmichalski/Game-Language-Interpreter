@@ -47,7 +47,8 @@ while(!finished)
         {
             rolled = roll(20);
         }
-        print("XD")
+        print("     XD")
+        print("  XD   ")
         player.xD = player.xD + rolled;
         print(player.xD);
         if(player.xD > 20)

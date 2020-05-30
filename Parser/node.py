@@ -92,9 +92,6 @@ class Node():
         if self.peekToken() == "WIN":
             return WinHeaderNode(self.tokens)  
 
-        if self.peekToken() == "QUOTE":
-            pass
-
         if self.peekToken() == "PRINT":
             return PrintNode(self.tokens)
 
