@@ -19,7 +19,7 @@ def isGameOver(a, b)
 
 while(!game.over)
 {
-    game.over = isGameOver(game.over, game.over);
+    game.over = isGameOver();
 
     if(game.over)
     {
@@ -37,7 +37,12 @@ while(!game.over)
             [player.tokens < 10] {player.tokens = player.tokens + 1;}
         }
         print("===")
-
+        forEachPlayer(1)
+        {
+            print(player.name)
+            print(player.tokens)
+        }
+        print("===================")
     }
 }
 
