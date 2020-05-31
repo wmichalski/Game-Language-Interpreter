@@ -14,7 +14,6 @@ players = []
 
 breakStatus = 0
 analysedFunc = Function("placeholder", "placeholder", "placeholder")
-analysedHeader = ""
 
 analysedPlayer = None
 chosenPlayer = None
@@ -461,7 +460,6 @@ class ForEachPlayerNode(Node):
             raise_error("FOREACHPLAYER seems not to have a }.", self.position)
 
     def execute(self):
-        # not sure yet if breakStatus will collide with WhileNode if nested or not
         global breakStatus
         global analysedPlayer
         toReturn = None

@@ -122,6 +122,8 @@ class Tokeniser:
                 if self.fm.peek_chars(1) == "\\":
                     self.fm.get_chars(1)
                 chars += self.fm.get_chars(1)
+                if len(chars) > self.MAX_TOKEN_LENGTH:
+                    self.raise_error("The token is too long", chars)
             self.fm.get_chars(1)
             return Token("TEXT", chars, self.fm.get_position())
 
