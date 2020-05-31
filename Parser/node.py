@@ -314,16 +314,20 @@ class VariableInitNode(Node):
         return self.name
 
     def execute(self):
+        if len(self.children) == 1:
+            value = self.children[0].execute()
+        else:
+            value = None
+
         if "player." in self.name:
             for player in players:
-                player.addVariable([self.name, self.children[0].execute()])
+                player.addVariable([self.name, value])
         elif "game." in self.name:
-            gameVarDict[self.name] = self.children[0].execute()
+            gameVarDict[self.name] = value
         elif "rolled" == self.name:
             raise_error(
                 "Rolled cannot have a user-assigned value.", self.position)
         else:
-            value = self.children[0].execute()
             localVarDict[self.name] = value
 
 
@@ -347,28 +351,30 @@ class VariableAssignmentNode(Node):
 
     def execute(self):
         if "player." in self.name:
+            if len(players) == 0:
+                raise_error("Can't assign a player variable if there are no players.", self.position)
             if analysedPlayer.getValue(self.name) is not None:
                 analysedPlayer.setValue(self.name, self.children[0].execute())
             else:
-                raise KeyError(
-                    "Player doesn't have such a variable.", self.name)
+                raise_error(
+                    "Player doesn't have such a variable: " + self.name, self.position)
         elif "chosen." in self.name:
             if chosenPlayer.getValue(self.name.replace("chosen.", "player.")) is not None:
                 chosenPlayer.setValue(self.name.replace(
                     "chosen.", "player."), self.children[0].execute())
             else:
-                raise KeyError(
-                    "Chosen player doesn't have such a variable.", self.name)
+                raise_error(
+                    "Chosen player doesn't have such a variable: " + self.name, self.position)
         elif "game." in self.name:
             if self.name in gameVarDict:
                 gameVarDict[self.name] = self.children[0].execute()
             else:
-                raise KeyError("Game doesn't have such a variable.", self.name)
+                raise_error("Game doesn't have such a variable: " + self.name, self.position)
         else:
             if self.name in localVarDict:
                 localVarDict[self.name] = self.children[0].execute()
             else:
-                raise KeyError("Variable " + self.name + " was not found")
+                raise_error("Variable " + self.name + " was not found", self.position)
 
 
 class FunctionInitNode(Node):
@@ -942,24 +948,32 @@ class ValueNode(Node):
                 return int(self.value)
 
         if self.type in ["IDENTIFIER"]:
+            to_return = None
+
             if "player." in self.value:
-                return analysedPlayer.getValue(self.value)
+                to_return = analysedPlayer.getValue(self.value)
             elif "chosen." in self.value:
-                return chosenPlayer.getValue(self.value.replace("chosen.", "player."))
+                to_return = chosenPlayer.getValue(self.value.replace("chosen.", "player."))
             elif "game." in self.value:
                 try:
                     global gameVarDict
-                    return gameVarDict[self.value]
+                    to_return = gameVarDict[self.value]
                 except:
                     raise_error("Variable not found in gamedict - " +
                                 self.value, self.position)
             else:
                 try:
                     global localVarDict
-                    return localVarDict[self.value]
+                    to_return = localVarDict[self.value]
                 except:
                     raise_error("Variable not found in vardict - " +
                                 self.value, self.position)
+
+            if to_return is None:
+                raise_error("Returned None value. Are you sure you have assigned value to " + self.value +"?", self.position)
+            else:
+                return(to_return)
+
         return self.value
 
 

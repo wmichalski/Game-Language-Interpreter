@@ -12,7 +12,7 @@ Run parser tests with
 ```python3 -m unittest Testing/parser_tests.py```
 
 Run output tests with
-```python3 -m unittest Testing/final_tests.py```
+```python3 -m unittest Testing/output_tests.py```
 
 Run program with your own script with
 ```python3 main.py [name of file]```
