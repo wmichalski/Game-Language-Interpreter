@@ -143,8 +143,8 @@ class Node():
                 self.popToken()
                 return doNothing(self.tokens)
             else:
-                raise SyntaxError("Infinite loop. Some issue with a token: " +
-                                  self.tokens[-1].type + " - " + self.tokens[-1].value)
+                raise_error("Infinite loop. Some issue with a token: " +
+                                  self.tokens[-1].type + " - " + self.tokens[-1].value, self.peekTokenPosition())
 
         self.looped = len(self.tokens)
         return self.create_subtree(self.tokens)
@@ -168,21 +168,21 @@ class WhileNode(Node):
         self.position = self.peekTokenPosition()
 
         if self.popToken().type != "WHILE":
-            raise SyntaxError("WHILE seems not to have a WHILE. How?")
+            raise_error("WHILE seems not to have a WHILE. How?", self.position)
         if self.popToken().type != "LEFT_ROUND":
-            raise SyntaxError("WHILE seems not to have a (")
+            raise_error("WHILE seems not to have a (", self.position)
 
         self.children.append(Condition(self.tokens))
 
         if self.popToken().type != "RIGHT_ROUND":
-            raise SyntaxError("WHILE seems not to have a )")
+            raise_error("WHILE seems not to have a )", self.position)
         if self.popToken().type != "LEFT_CURLY":
-            raise SyntaxError("WHILE seems not to have a {")
+            raise_error("WHILE seems not to have a {", self.position)
 
         self.children.append(BlockOfCode(self.tokens))
 
         if self.popToken() == "RIGHT_CURLY":
-            raise SyntaxError("WHILE seems not to have a }")
+            raise_error("WHILE seems not to have a }", self.position)
 
     def execute(self):
         global breakStatus
@@ -241,6 +241,8 @@ class RollNode(Node):
             raise_error("ROLL seems not to have a )", self.position)
 
     def execute(self):
+        if isinstance(self.children[0].execute(),str):
+            raise_error("Passed a string as a roll argument.", self.position)
         return randrange(self.children[0].execute())
 
 
@@ -359,12 +361,15 @@ class VariableAssignmentNode(Node):
                 raise_error(
                     "Player doesn't have such a variable: " + self.name, self.position)
         elif "chosen." in self.name:
-            if chosenPlayer.getValue(self.name.replace("chosen.", "player.")) is not None:
-                chosenPlayer.setValue(self.name.replace(
-                    "chosen.", "player."), self.children[0].execute())
+            if chosenPlayer is not None:
+                if chosenPlayer.getValue(self.name.replace("chosen.", "player.")) is not None:
+                    chosenPlayer.setValue(self.name.replace(
+                        "chosen.", "player."), self.children[0].execute())
+                else:
+                    raise_error(
+                        "Chosen player doesn't have such a variable: " + self.name, self.position)
             else:
-                raise_error(
-                    "Chosen player doesn't have such a variable: " + self.name, self.position)
+                raise_error("There is no chosen player yet.", self.position)
         elif "game." in self.name:
             if self.name in gameVarDict:
                 gameVarDict[self.name] = self.children[0].execute()
@@ -400,7 +405,10 @@ class FunctionInitNode(Node):
             raise_error("FUNCTION_DEF seems not to have a (", self.position)
 
         while(self.peekTokenType() != "RIGHT_ROUND"):
-            self.children.append(self.popToken())
+            if self.peekTokenType() == "IDENTIFIER":
+                self.children.append(self.popToken())
+            else:
+                raise_error("Function parameter seems off: " + str(self.popToken().value), self.position)
             if self.peekTokenType() == "COMMA":
                 self.popToken()
 
@@ -450,12 +458,13 @@ class ForEachPlayerNode(Node):
         self.children.append(BlockOfCode(self.tokens))
 
         if self.popToken() == "RIGHT_CURLY":
-            raise SyntaxError("FOREACHPLAYER seems not to have a }.")
+            raise_error("FOREACHPLAYER seems not to have a }.", self.position)
 
     def execute(self):
         # not sure yet if breakStatus will collide with WhileNode if nested or not
         global breakStatus
         global analysedPlayer
+        toReturn = None
 
         for player in players:
             analysedPlayer = player
@@ -826,9 +835,6 @@ class FullMathExpressionNode(Node):
                     self.to_return -= element.execute()
 
         return self.to_return
-        # if len(self.children) == 1:
-        #     self.children = list(self.children[0].children)
-
 
 class MultiplicationNode(Node):
     # multiplication = partMathExpression, { multiplicationOperator, partMathExpression } ;
@@ -1021,9 +1027,12 @@ class PlayersHeaderNode(Node):
         if self.popToken().type != "PLAYERS":
             raise_error("Missing PLAYERS in PLAYERS. How?", self.position)
 
-        self.children.append(super().create_subtree(self.tokens))
+        self.children.append(LogicalOrNode(self.tokens))
 
     def execute(self):
+        if len(players) != 0:
+            raise_error("Players were already initialised" ,self.position)
+
         for i in range(self.children[0].execute()):
             players.append(Player("Player " + str(i)))
 
