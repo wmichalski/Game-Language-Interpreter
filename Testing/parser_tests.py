@@ -10,39 +10,11 @@ from Lexer.tokeniser import Tokeniser
 from Lexer.token import Token
 from Parser.node import *
 
+from main import print_tree, print_node_name, print_node_value
+
 class AcceptanceScriptTester(unittest.TestCase):
     def compare_output(self, expected, result):
         self.assertEqual(expected, result)
-
-
-    def print_tree(self, node, depth):
-        if node.__class__ == Token:
-            print("| " * (depth) + "└ " + node.__class__.__name__ + " [" + node.value + "]")
-        else:
-            print("| " * (depth) + "└ " + node.__class__.__name__, end="")
-            self.print_node_name(node)
-            self.print_node_value(node)
-            print("")
-
-        try:
-            for child in node.children:
-                print_tree(child, depth+1)
-        except:
-            pass
-
-    def print_node_name(self, node):
-        try:
-            name = node.get_name()
-            print(" [" + name + "]", end="")
-        except:
-            pass
-
-    def print_node_value(self, node):
-        try:
-            value = node.get_value()
-            print(" [" + str(value) + "]", end="")
-        except:
-            pass
 
     def test_fibonacci(self):
         with io.StringIO() as buf, redirect_stdout(buf):
@@ -56,7 +28,7 @@ class AcceptanceScriptTester(unittest.TestCase):
                 analysed_tokens = analysed_tokens[1:]
 
                 parsed = ProgramNode(analysed_tokens[::-1], file_manager)
-                self.print_tree(parsed, 0)
+                print_tree(parsed, 0)
 
                 solution = """└ ProgramNode
 | └ FunctionInitNode [fib]
@@ -198,7 +170,7 @@ class AcceptanceScriptTester(unittest.TestCase):
                 analysed_tokens = analysed_tokens[1:]
 
                 parsed = ProgramNode(analysed_tokens[::-1], file_manager)
-                self.print_tree(parsed, 0)
+                print_tree(parsed, 0)
 
                 solution = """└ ProgramNode
 | └ FunctionInitNode [add]
@@ -286,7 +258,7 @@ class AcceptanceScriptTester(unittest.TestCase):
                 analysed_tokens = analysed_tokens[1:]
 
                 parsed = ProgramNode(analysed_tokens[::-1], file_manager)
-                self.print_tree(parsed, 0)
+                print_tree(parsed, 0)
 
                 solution = """└ ProgramNode
 | └ RunHeaderNode
@@ -421,7 +393,7 @@ class AcceptanceScriptTester(unittest.TestCase):
                 analysed_tokens = analysed_tokens[1:]
 
                 parsed = ProgramNode(analysed_tokens[::-1], file_manager)
-                self.print_tree(parsed, 0)
+                print_tree(parsed, 0)
 
                 solution = """└ ProgramNode
 | └ FunctionInitNode [divideBy]
@@ -575,7 +547,7 @@ class AcceptanceScriptTester(unittest.TestCase):
                 analysed_tokens = analysed_tokens[1:]
 
                 parsed = ProgramNode(analysed_tokens[::-1], file_manager)
-                self.print_tree(parsed, 0)
+                print_tree(parsed, 0)
 
                 solution = """└ ProgramNode
 | └ FunctionInitNode [nwd]
@@ -876,7 +848,7 @@ class AcceptanceScriptTester(unittest.TestCase):
                 analysed_tokens = analysed_tokens[1:]
 
                 parsed = ProgramNode(analysed_tokens[::-1], file_manager)
-                self.print_tree(parsed, 0)
+                print_tree(parsed, 0)
 
                 solution = """└ ProgramNode
 | └ FunctionInitNode [power]
@@ -1147,7 +1119,7 @@ class AcceptanceScriptTester(unittest.TestCase):
                 analysed_tokens = analysed_tokens[1:]
 
                 parsed = ProgramNode(analysed_tokens[::-1], file_manager)
-                self.print_tree(parsed, 0)
+                print_tree(parsed, 0)
 
                 solution = """└ ProgramNode
 | └ PrintNode
@@ -1349,7 +1321,7 @@ class AcceptanceScriptTester(unittest.TestCase):
                 analysed_tokens = analysed_tokens[1:]
 
                 parsed = ProgramNode(analysed_tokens[::-1], file_manager)
-                self.print_tree(parsed, 0)
+                print_tree(parsed, 0)
 
                 solution = """└ ProgramNode
 | └ PlayersHeaderNode
@@ -1566,7 +1538,7 @@ class AcceptanceScriptTester(unittest.TestCase):
                 analysed_tokens = analysed_tokens[1:]
 
                 parsed = ProgramNode(analysed_tokens[::-1], file_manager)
-                self.print_tree(parsed, 0)
+                print_tree(parsed, 0)
 
                 solution = """└ ProgramNode
 | └ PlayersHeaderNode
@@ -1906,7 +1878,7 @@ class AcceptanceScriptTester(unittest.TestCase):
                 analysed_tokens = analysed_tokens[1:]
 
                 parsed = ProgramNode(analysed_tokens[::-1], file_manager)
-                self.print_tree(parsed, 0)
+                print_tree(parsed, 0)
 
                 solution = """└ ProgramNode
 | └ PlayersHeaderNode
@@ -2195,7 +2167,7 @@ class AcceptanceScriptTester(unittest.TestCase):
                 analysed_tokens = analysed_tokens[1:]
 
                 parsed = ProgramNode(analysed_tokens[::-1], file_manager)
-                self.print_tree(parsed, 0)
+                print_tree(parsed, 0)
 
                 solution = """└ ProgramNode
 | └ PlayersHeaderNode
