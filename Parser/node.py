@@ -388,14 +388,16 @@ class FunctionInitNode(Node):
         self.position = self.peekTokenPosition()
 
         if(self.popToken().type != "FUNCTION_DEF"):
-            raise SyntaxError(
-                "FUNCTION_DEF seems not to have a FUNCTION_DEF. How?")
+            raise_error(
+                "FUNCTION_DEF seems not to have a FUNCTION_DEF. How?", self.position)
 
         if(self.peekTokenType() == "IDENTIFIER"):
             self.name = self.popToken().value
+        else:
+            raise_error("Something is wrong with the name " + str(self.popToken().value), self.position)
 
         if(self.popToken().type != "LEFT_ROUND"):
-            raise SyntaxError("FUNCTION_DEF seems not to have a (")
+            raise_error("FUNCTION_DEF seems not to have a (", self.position)
 
         while(self.peekTokenType() != "RIGHT_ROUND"):
             self.children.append(self.popToken())
@@ -403,21 +405,23 @@ class FunctionInitNode(Node):
                 self.popToken()
 
         if(self.popToken().type != "RIGHT_ROUND"):
-            raise SyntaxError("FUNCTION_DEF seems not to have a )")
+            raise_error("FUNCTION_DEF seems not to have a )", self.position)
 
         if(self.popToken().type != "LEFT_CURLY"):
-            raise SyntaxError("FUNCTION_DEF seems not to have a {")
+            raise_error("FUNCTION_DEF seems not to have a {", self.position)
 
         self.children.append(BlockOfCode(self.tokens))
 
         if(self.popToken().type != "RIGHT_CURLY"):
-            raise SyntaxError("FUNCTION_DEF seems not to have a }")
+            raise_error("FUNCTION_DEF seems not to have a }", self.position)
 
     def get_name(self):
         return self.name
 
     def execute(self):
         parameters = [token.value for token in self.children[:-1]]
+        if self.name in [func.name for func in functions]:
+            raise_error("There is already a defined fuction: " + self.name, self.position)
         functions.append(Function(self.name, parameters, self.children[-1]))
 
 
