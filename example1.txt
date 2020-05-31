@@ -1,5 +1,10 @@
+var a = "dddddddddd";
+
 if(1) 
 {
-    var a;;;;;;
-    a = 2;;;;
+    var n = n;
+    var a = a*2;
+    a = 2;
+    a = 3;
+    a = 4;
 }

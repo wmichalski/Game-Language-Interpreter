@@ -10,18 +10,18 @@ def run(path):
     with file_manager as fm:
         tokeniser = Tokeniser(fm)
         analysed_tokens = []
-        analysed_tokens.append(Token("START_OF_FILE", ""))
+        analysed_tokens.append(Token("START_OF_FILE", "", 0))
         while (analysed_tokens[-1].type is not "END_OF_FILE"):
             analysed_tokens.append(tokeniser.get_token())
 
-    analysed_tokens = analysed_tokens[1:]
-    print_tokens(analysed_tokens)
+        analysed_tokens = analysed_tokens[1:]
+        print_tokens(analysed_tokens)
 
-    parsed = ProgramNode(analysed_tokens[::-1])
-    print_tree(parsed, 0)
+        parsed = ProgramNode(analysed_tokens[::-1], file_manager)
+        print_tree(parsed, 0)
 
-    print("==========")
-    parsed.execute()
+        print("==========")
+        parsed.execute()
 
 def print_tokens(analysed_tokens):
     format_string = "({:<30} {:<20}),"

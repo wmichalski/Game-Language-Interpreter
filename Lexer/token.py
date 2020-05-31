@@ -1,7 +1,8 @@
 class Token:
-    def __init__(self, token_type, value=None):
+    def __init__(self, token_type, value=None, position=None):
         self.type = token_type
         self.value = value
+        self.position = position-len(self.value)
 
 
 keyword_types = {

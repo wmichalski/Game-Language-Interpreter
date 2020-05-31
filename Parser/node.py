@@ -3,6 +3,7 @@ from Parser.function import Function
 from copy import deepcopy
 from Parser.player import Player
 from random import randrange
+from Parser import error_manager
 import random
 
 # localVarDict keeps either a dict of variables from the "RUN" section or from the called function
@@ -16,6 +17,7 @@ functions = []
 analysedPlayer = None
 chosenPlayer = None
 players = []
+filemanager = None
 
 def pairwise(iterable):
     # https://stackoverflow.com/questions/4628290/pairs-from-single-list
@@ -42,7 +44,18 @@ def ChoosePolicy(selectables):
     return random.choice(selectables)
 
 def ChoosePlayer():
-    return random.choice(players)
+    global analysedPlayer
+    randomed = random.choice(players)
+
+    while randomed == analysedPlayer:
+        randomed = random.choice(players)
+
+    return randomed
+
+def raise_error(message, token):
+    global filemanager
+    error_manager.manage_error(filemanager, token)
+    raise error_manager.ErrorManager(message)
 
 class Node():
     def __init__(self, tokens):
@@ -50,76 +63,79 @@ class Node():
         self.value = None
         self.looped = -1
 
-    def peekToken(self, depth = -1):
+    def peekTokenType(self, depth = -1):
         return self.tokens[depth].type
+
+    def peekTokenPosition(self, depth = -1):
+        return self.tokens[depth].position-len(self.tokens[depth].value)
 
     def popToken(self):
         return self.tokens.pop()
 
     def create_subtree(self, tokens):
         self.tokens = tokens
-        if self.peekToken() == "IF":
+        if self.peekTokenType() == "IF":
             return IfNode(self.tokens)
 
-        if self.peekToken() == "WHILE":
+        if self.peekTokenType() == "WHILE":
             return WhileNode(self.tokens)
 
-        if self.peekToken() == "FUNCTION_DEF":
+        if self.peekTokenType() == "FUNCTION_DEF":
             return FunctionInitNode(self.tokens)
 
-        if self.peekToken() == "VARIABLE_ASSIGN":
+        if self.peekTokenType() == "VARIABLE_ASSIGN":
             return VariableInitNode(self.tokens)
 
-        if self.peekToken() == "BREAK":
+        if self.peekTokenType() == "BREAK":
             return BreakNode(self.tokens)
 
-        if self.peekToken() == "CHOICE":
+        if self.peekTokenType() == "CHOICE":
             return ChoiceStatementNode(self.tokens)
 
-        if self.peekToken() == "RETURN":
+        if self.peekTokenType() == "RETURN":
             return ReturnNode(self.tokens)
 
-        if self.peekToken() == "PLAYERS":
+        if self.peekTokenType() == "PLAYERS":
             return PlayersHeaderNode(self.tokens)
 
-        if self.peekToken() == "GAME":
+        if self.peekTokenType() == "GAME":
             return GameHeaderNode(self.tokens)
 
-        if self.peekToken() == "TEXT":
-            return TextNode(self.tokens)
+        # if self.peekTokenType() == "TEXT":
+        #     return TextNode(self.tokens)
 
-        if self.peekToken() == "INDIVIDUAL":
+        if self.peekTokenType() == "INDIVIDUAL":
             return IndividualHeaderNode(self.tokens)
 
-        if self.peekToken() == "FUNCTIONS":
+        if self.peekTokenType() == "FUNCTIONS":
             return FunctionsHeaderNode(self.tokens)
 
-        if self.peekToken() == "RUN":
+        if self.peekTokenType() == "RUN":
             return RunHeaderNode(self.tokens)  
 
-        if self.peekToken() == "WIN":
+        if self.peekTokenType() == "WIN":
             return WinHeaderNode(self.tokens)  
 
-        if self.peekToken() == "PRINT":
+        if self.peekTokenType() == "PRINT":
             return PrintNode(self.tokens)
 
-        if self.peekToken() == "FOR_EACH_PLAYER":
+        if self.peekTokenType() == "FOR_EACH_PLAYER":
             return ForEachPlayerNode(self.tokens)
 
-        if self.peekToken() == "LEFT_ROUND":
+        if self.peekTokenType() == "LEFT_ROUND":
             return BracketedExpression(self.tokens)
 
-        if self.peekToken() == "IDENTIFIER" and self.peekToken(-2) == "END_OF_FILE":
+        if self.peekTokenType() == "IDENTIFIER" and self.peekTokenType(-2) == "END_OF_FILE":
             return VariableAssignmentNode(self.tokens)
 
-        if self.peekToken() == "IDENTIFIER" and self.peekToken(-2) == "ASSIGNMENT":
+        if self.peekTokenType() == "IDENTIFIER" and self.peekTokenType(-2) == "ASSIGNMENT":
             return VariableAssignmentNode(self.tokens)
 
-        if self.peekToken() in ["REAL_NUMBER", "NATURAL_NUMBER", "IDENTIFIER", "ROLL", "MINUS", "LOGICAL_NOT"]:
+        if self.peekTokenType() in ["REAL_NUMBER", "NATURAL_NUMBER", "IDENTIFIER", "ROLL", "MINUS", "LOGICAL_NOT"]:
             return LogicalOrNode(self.tokens)
 
         if self.looped == len(self.tokens):
-            if self.peekToken() == "SEMICOLON":
+            if self.peekTokenType() == "SEMICOLON":
                 self.popToken()
                 return doNothing(self.tokens)
             else:
@@ -143,6 +159,8 @@ class WhileNode(Node):
         self.parse()
 
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         if self.popToken().type != "WHILE":
             raise SyntaxError("WHILE seems not to have a WHILE. How?")
         if self.popToken().type != "LEFT_ROUND":
@@ -177,13 +195,15 @@ class BlockOfCode(Node):
         self.parse()
 
     def parse(self):
-        while self.peekToken() != "RIGHT_CURLY":
+        self.position = self.peekTokenPosition()
+
+        while self.peekTokenType() != "RIGHT_CURLY":
             self.children.append(super().create_subtree(self.tokens)) 
-            if self.peekToken() == "SEMICOLON":
+            if self.peekTokenType() == "SEMICOLON":
                 self.popToken()
-            if self.peekToken() == "WIN":
+            if self.peekTokenType() == "WIN":
                 break
-            if self.peekToken() == "END_OF_FILE":
+            if self.peekTokenType() == "END_OF_FILE":
                 break
 
     def execute(self):
@@ -201,12 +221,14 @@ class RollNode(Node):
         self.parse()
     
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         self.popToken() # ROLL
         if self.popToken().type != "LEFT_ROUND":
-            raise SyntaxError("ROLL seems not to have a (")
+            raise_error("ROLL seems not to have a (", self.position)
         self.children.append(super().create_subtree(self.tokens)) 
         if self.popToken() == "RIGHT_ROUND":
-            raise SyntaxError("ROLL seems not to have a )")
+            raise_error("ROLL seems not to have a )", self.position)
 
     def execute(self):
         return randrange(self.children[0].execute())
@@ -218,6 +240,8 @@ class PrintNode(Node):
         self.parse()
     
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         self.popToken() # PRINT
         if self.popToken().type != "LEFT_ROUND":
             raise SyntaxError("PRINT seems not to have a (")
@@ -266,13 +290,15 @@ class VariableInitNode(Node):
         self.parse(tokens)
     
     def parse(self, tokens):
+        self.position = self.peekTokenPosition()
+
         if self.popToken().type != "VARIABLE_ASSIGN":
-            raise SyntaxError("VAR seems not to have a VAR. How?")
+            raise_error("VAR seems not to have a VAR. How?", self.position)
 
         self.name = self.popToken().value
-        if self.peekToken() == "ASSIGNMENT":
+        if self.peekTokenType() == "ASSIGNMENT":
             self.popToken()
-            self.children.append(super().create_subtree(self.tokens))
+            self.children.append(LogicalOrNode(self.tokens))
 
     def get_name(self):
         return self.name
@@ -282,7 +308,9 @@ class VariableInitNode(Node):
             for player in players:
                 player.addVariable([self.name, self.children[0].execute()])
         elif "game." in self.name:
-            gameVarDict[self.name] = self.children[0]
+            gameVarDict[self.name] = self.children[0].execute()
+        elif "rolled" == self.name:
+            raise_error("Rolled cannot have a user-assigned value.", self.position)
         else:
             value = self.children[0].execute()
             localVarDict[self.name] = value
@@ -295,10 +323,12 @@ class VariableAssignmentNode(Node):
         self.parse(tokens)
     
     def parse(self, tokens):
+        self.position = self.peekTokenPosition()
+
         self.name = self.popToken().value
-        if self.peekToken() == "ASSIGNMENT":
+        if self.peekTokenType() == "ASSIGNMENT":
             self.popToken()
-            self.children.append(super().create_subtree(self.tokens))
+            self.children.append(LogicalOrNode(self.tokens))
 
     def get_name(self):
         return self.name
@@ -316,14 +346,14 @@ class VariableAssignmentNode(Node):
                 raise KeyError("Chosen player doesn't have such a variable.", self.name)
         elif "game." in self.name:
             if self.name in gameVarDict:
-                gameVarDict[self.name] = self.children[0]
+                gameVarDict[self.name] = self.children[0].execute()
             else:
                 raise KeyError("Game doesn't have such a variable.", self.name)
         else:
             if self.name in localVarDict:
                localVarDict[self.name] = self.children[0].execute()
             else:
-               KeyError("Variable" + self.name + "was not found")
+               raise KeyError("Variable " + self.name + " was not found")
 
 class FunctionInitNode(Node):
     def __init__(self, tokens):
@@ -333,18 +363,20 @@ class FunctionInitNode(Node):
         self.parse()
 
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         if(self.popToken().type != "FUNCTION_DEF"):
             raise SyntaxError("FUNCTION_DEF seems not to have a FUNCTION_DEF. How?")
 
-        if(self.peekToken() == "IDENTIFIER"):
+        if(self.peekTokenType() == "IDENTIFIER"):
             self.name = self.popToken().value
 
         if(self.popToken().type != "LEFT_ROUND"):
             raise SyntaxError("FUNCTION_DEF seems not to have a (")
 
-        while(self.peekToken() != "RIGHT_ROUND"):
+        while(self.peekTokenType() != "RIGHT_ROUND"):
             self.children.append(self.popToken())
-            if self.peekToken() == "COMMA":
+            if self.peekTokenType() == "COMMA":
                 self.popToken()
                 
         if(self.popToken().type != "RIGHT_ROUND"):
@@ -372,17 +404,19 @@ class ForEachPlayerNode(Node):
         self.parse()
 
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         if self.popToken().type != "FOR_EACH_PLAYER":
-            raise SyntaxError("FOREACHPLAYER seems not to have a FOREACHPLAYER. How?")
+            raise_error("FOREACHPLAYER seems not to have a FOREACHPLAYER. How?", self.position)
         if self.popToken().type != "LEFT_ROUND":
-            raise SyntaxError("FOREACHPLAYER seems not to have a (.")
+            raise_error("FOREACHPLAYER seems not to have a (.", self.position)
 
         self.children.append(Condition(self.tokens))
 
         if self.popToken().type != "RIGHT_ROUND":
-            raise SyntaxError("FOREACHPLAYER seems not to have a ).")
+            raise_error("FOREACHPLAYER seems not to have a ).", self.position)
         if self.popToken().type != "LEFT_CURLY":
-            raise SyntaxError("FOREACHPLAYER seems not to have a {.")
+            raise_error("FOREACHPLAYER seems not to have a {.", self.position)
 
         self.children.append(BlockOfCode(self.tokens))
 
@@ -396,12 +430,13 @@ class ForEachPlayerNode(Node):
 
         if self.children[0].execute():
             for player in players:
-                if breakStatus == 0:
+                if breakStatus == 0 and analysedFunc.returnStatus == 0:
                     analysedPlayer = player
-                    self.children[1].execute()
+                    toReturn = self.children[1].execute()
 
         breakStatus = 0
         analysedPlayer = None
+        return toReturn
 
 class IfNode(Node):
     def __init__(self, tokens):
@@ -410,32 +445,34 @@ class IfNode(Node):
         self.parse()
 
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         if self.popToken().type != "IF":
-            raise SyntaxError("IF seems not to have an IF. How?")
+            raise_error("IF seems not to have an IF. How?", self.position)
         if self.popToken().type != "LEFT_ROUND":
-            raise SyntaxError("IF seems not to have a (.")
+            raise_error("IF seems not to have a (.", self.position)
 
         self.children.append(Condition(self.tokens))
 
         if self.popToken().type != "RIGHT_ROUND":
-            raise SyntaxError("IF seems not to have a ).")
+            raise_error("IF seems not to have a ).", self.position)
         if self.popToken().type != "LEFT_CURLY":
-            raise SyntaxError("IF seems not to have a {.")
+            raise_error("IF seems not to have a {.", self.position)
 
         self.children.append(BlockOfCode(self.tokens))
 
         if self.popToken() == "RIGHT_CURLY":
-            raise SyntaxError("IF seems not to have a }.")
+            raise_error("IF seems not to have a }.", self.position)
 
-        if self.peekToken() == "ELSE":
+        if self.peekTokenType() == "ELSE":
             self.popToken() 
             if self.popToken().type != "LEFT_CURLY":
-                raise SyntaxError("ELSE seems not to have a {.")
+                raise_error("ELSE seems not to have a {.", self.position)
 
             self.children.append(BlockOfCode(self.tokens))
 
             if self.popToken().type != "RIGHT_CURLY":
-                raise SyntaxError("ELSE seems not to have a }.")
+                raise_error("ELSE seems not to have a }.", self.position)
 
     def execute(self):
         if self.children[0].execute():
@@ -452,29 +489,37 @@ class Condition(Node):
         self.parse(tokens)
     
     def parse(self, tokens):
-        self.children.append(super().create_subtree(self.tokens))
+        self.position = self.peekTokenPosition()
+        self.children.append(LogicalOrNode(self.tokens))
 
     def execute(self):
+        if isinstance(self.children[0].execute(), str):
+            raise_error("Seems like you have put a string as a condition", self.position)
         return self.children[0].execute()
 
 class ProgramNode(Node):
     # note for self: ignore "RUN:" tokens etc
-    def __init__(self, tokens):
+    def __init__(self, tokens, fm):
         super().__init__(tokens)
         self.children = []
         self.varDict = {}
         global localVarDict
         localVarDict = self.varDict
 
+        self.init_file_manager(fm)
         self.parse()
 
     def parse(self):
-        while(self.peekToken() != "END_OF_FILE"):
+        while(self.peekTokenType() != "END_OF_FILE"):
             self.children.append(super().create_subtree(self.tokens))
 
     def execute(self):
         for child in self.children:
             child.execute()
+
+    def init_file_manager(self, fm):
+        global filemanager
+        filemanager = fm
         
 class ChoiceStatementNode(Node):
     def __init__(self, tokens):
@@ -483,22 +528,24 @@ class ChoiceStatementNode(Node):
         self.parse()
     
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         self.popToken() # CHOICE
         if self.popToken().type != "LEFT_ROUND":
-            raise SyntaxError("Choice init seems not to have a (")
+            raise_error("Choice init seems not to have a (", self.position)
 
         self.children.append(super().create_subtree(self.tokens))
 
         if self.popToken().type != "RIGHT_ROUND":
-            raise SyntaxError("Choice init seems not to have a )")
+            raise_error("Choice init seems not to have a )", self.position)
         if self.popToken().type != "LEFT_CURLY":
-            raise SyntaxError("Choice init seems not to have a {")
+            raise_error("Choice init seems not to have a {", self.position)
 
-        while self.peekToken() != "RIGHT_CURLY":
+        while self.peekTokenType() != "RIGHT_CURLY":
             self.children.append(ChoiceNode(self.tokens))
 
         if self.popToken().type != "RIGHT_CURLY":
-            raise SyntaxError("Choice init seems not to have a }")
+            raise_error("Choice init seems not to have a }", self.position)
 
     def execute(self):
         selectable = []
@@ -507,7 +554,6 @@ class ChoiceStatementNode(Node):
             # child's first child is condition:
             if child.children[0].execute():
                 selectable.append(child)
-        # TODO select
 
         if len(selectable) == 0:
             return 0
@@ -528,20 +574,22 @@ class ChoiceNode(Node):
         self.parse()
 
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         if self.popToken().type != "LEFT_SQUARE":
-            raise SyntaxError("Choice seems not to have a [")
+            raise_error("Choice init seems not to have a [", self.position)
 
         self.children.append(Condition(self.tokens))
 
         if self.popToken().type != "RIGHT_SQUARE":
-            raise SyntaxError("Choice seems not to have a ]")
+            raise_error("Choice init seems not to have a ]", self.position)
         if self.popToken().type != "LEFT_CURLY":
-            raise SyntaxError("Choice seems not to have a {")
+            raise_error("Choice init seems not to have a {", self.position)
 
         self.children.append(BlockOfCode(self.tokens))
 
         if self.popToken().type != "RIGHT_CURLY":
-            raise SyntaxError("Choice seems not to have a }")
+            raise_error("Choice init seems not to have a }", self.position)
 
     def execute(self):
         self.children[1].execute()
@@ -556,7 +604,9 @@ class LogicalOrNode(Node):
         self.parse()
 
     def parse(self):
-        while(self.peekToken() == "LOGICAL_OR"):
+        self.position = self.peekTokenPosition()
+
+        while(self.peekTokenType() == "LOGICAL_OR"):
             self.popToken()
             self.children.append(LogicalAndNode(self.tokens))
 
@@ -567,7 +617,7 @@ class LogicalOrNode(Node):
             for element in self.children:
                 if element.__class__ != Token:
                     if isinstance(element.execute(), str):
-                        raise TypeError("Seems like you are doing a logical OR operation on a string?")
+                        raise_error("Seems like you are doing a logical OR operation on a string?", self.position)
                     if element.execute() != 0:
                         return 1
             return 0
@@ -583,7 +633,9 @@ class LogicalAndNode(Node):
         self.parse()
 
     def parse(self):
-        while(self.peekToken() == "LOGICAL_AND"):
+        self.position = self.peekTokenPosition()
+
+        while(self.peekTokenType() == "LOGICAL_AND"):
             self.popToken()
             self.children.append(LogicalCompareNode(self.tokens))
 
@@ -594,7 +646,7 @@ class LogicalAndNode(Node):
             for element in self.children:
                 if element.__class__ != Token:
                     if isinstance(element.execute(), str):
-                        raise TypeError("Seems like you are doing a logical AND operation on a string?")
+                        raise_error("Seems like you are doing a logical AND operation on a string?", self.position)
                     if element.execute() == 0:
                         return 0
             return 1
@@ -607,7 +659,9 @@ class LogicalNegationNode(Node):
         self.parse()
 
     def parse(self):
-        if(self.peekToken() == "LOGICAL_NOT"):
+        self.position = self.peekTokenPosition()
+
+        if(self.peekTokenType() == "LOGICAL_NOT"):
             self.popToken()
             self.children.append(LogicalNot(self.tokens))
         self.children.append(FullMathExpressionNode(self.tokens))
@@ -615,7 +669,7 @@ class LogicalNegationNode(Node):
     def execute(self):
         if self.children[0].__class__ == LogicalNot:
             if isinstance(self.children[1].execute(), str):
-                raise TypeError("Seems like you are doing a logical NOT operation on a string?")
+                raise_error("Seems like you are doing a logical NOT operation on a string?", self.position)
             if self.children[1].execute() != 0:
                 return 0
             else:
@@ -631,22 +685,18 @@ class LogicalCompareNode(Node):
         self.parse()
 
     def parse(self):
-        if(self.peekToken() in ["EQUAL_TO", "NOT_EQUAL_TO", "LOWER_OR_EQUAL", "GREATER_OR_EQUAL", "LOWER", "GREATER"]):
+        self.position = self.peekTokenPosition()
+
+        if(self.peekTokenType() in ["EQUAL_TO", "NOT_EQUAL_TO", "LOWER_OR_EQUAL", "GREATER_OR_EQUAL", "LOWER", "GREATER"]):
             self.children.append(self.popToken())
             self.children.append(LogicalNegationNode(self.tokens))
-
-        # if len(self.children) == 1:
-        #     try:
-        #         self.children = list(self.children[0].children)
-        #     except:
-        #         pass
 
     def execute(self):
         if len(self.children) == 1:
             return self.children[0].execute()
 
         if isinstance(self.children[0].execute(), str):
-            raise TypeError("Seems like you are comparing a string?")
+            raise_error("Seems like you are comparing a string?", self.position)
 
         else:
             lvalue = self.children[0].execute()
@@ -660,7 +710,6 @@ class LogicalCompareNode(Node):
                 "GREATER": lvalue > rvalue
             }[self.children[1].type]
 
-
 class FunctionCallNode(Node):
     def __init__(self, tokens):
         super().__init__(tokens)
@@ -669,19 +718,21 @@ class FunctionCallNode(Node):
         self.parse()
 
     def parse(self):
-        if(self.peekToken() == "IDENTIFIER"):
+        self.position = self.peekTokenPosition()
+
+        if(self.peekTokenType() == "IDENTIFIER"):
             self.name = self.popToken().value
 
         if(self.popToken().type != "LEFT_ROUND"):
-            raise SyntaxError("Function call seems not to have a (")
+            raise_error("Function call seems not to have a (", self.position)
 
-        while(self.peekToken() != "RIGHT_ROUND"):
-            self.children.append(super().create_subtree(self.tokens))
-            if self.peekToken() == "COMMA":
+        while(self.peekTokenType() != "RIGHT_ROUND"):
+            self.children.append(LogicalOrNode(self.tokens))
+            if self.peekTokenType() == "COMMA":
                 self.popToken()
 
         if(self.popToken().type != "RIGHT_ROUND"):
-            raise SyntaxError("Function call seems not to have a )")
+            raise_error("Function call seems not to have a )", self.position)
 
     def get_name(self):
         return self.name
@@ -706,15 +757,19 @@ class FullMathExpressionNode(Node):
         self.parse()
 
     def parse(self):
-        while(self.peekToken() in ["PLUS", "MINUS"]):
+        self.position = self.peekTokenPosition()
+
+        while(self.peekTokenType() in ["PLUS", "MINUS"]):
             self.children.append(self.popToken())
             self.children.append(MultiplicationNode(self.tokens))
 
     def execute(self):
         self.to_return = self.children[0].execute()
 
-        if isinstance(self.to_return, str) and len(self.children) > 1:
-            raise TypeError("Seems like you are trying to do a math operation on a string, eh?")
+        if len(self.children) > 1:
+            for child in self.children:
+                if child.__class__ is not Token and isinstance(child.execute(), str):
+                    raise_error("Seems like you are trying to do a math operation on a string", self.position)
 
         if len(self.children) > 1:
             for operation, element in pairwise(self.children[1:]):
@@ -737,15 +792,19 @@ class MultiplicationNode(Node):
         self.parse()
 
     def parse(self):
-        while(self.peekToken() in ["MULTIPLICATION", "DIVISION"]):
+        self.position = self.peekTokenPosition()
+
+        while(self.peekTokenType() in ["MULTIPLICATION", "DIVISION"]):
             self.children.append(self.popToken())
             self.children.append(PartMathExpressionNode(self.tokens))
     
     def execute(self):
         self.to_return = self.children[0].execute()
 
-        if isinstance(self.to_return, str) and len(self.children) > 1:
-            raise TypeError("Seems like you are trying to do a math operation on a string, eh?")
+        if len(self.children) > 1:
+            for child in self.children:
+                if child.__class__ is not Token and isinstance(child.execute(), str):
+                    raise_error("Seems like you are trying to do a math operation on a string", self.position)
 
         if len(self.children) > 1:
             for operation, element in pairwise(self.children[1:]):
@@ -766,22 +825,32 @@ class PartMathExpressionNode(Node):
         self.parse()
 
     def parse(self):
-        if(self.peekToken() == "MINUS"):
+        self.position = self.peekTokenPosition()
+
+        if(self.peekTokenType() == "MINUS"):
             self.popToken()
             self.children.append(NegativeNumber(self.tokens))
             self.is_negative = True
 
-        if(self.peekToken() == "LEFT_ROUND"):
+        if(self.peekTokenType() == "LEFT_ROUND"):
             self.children.append(BracketedExpression(self.tokens))
-        elif(self.peekToken() in ["REAL_NUMBER", "NATURAL_NUMBER"]):
+        elif(self.peekTokenType() in ["REAL_NUMBER", "NATURAL_NUMBER"]):
             self.children.append(ValueNode(self.tokens))
-        elif(self.peekToken() == "ROLL"):
+        elif(self.peekTokenType() == "ROLL"):
             self.children.append(RollNode(self.tokens))
-        elif(self.peekToken() == "IDENTIFIER"):
+        elif(self.peekTokenType() == "TEXT"):
+            self.children.append(TextNode(self.tokens))
+        elif(self.peekTokenType() == "IDENTIFIER"):
             if self.tokens[-2].type == "LEFT_ROUND":
                 self.children.append(FunctionCallNode(self.tokens))
             else:
                 self.children.append(ValueNode(self.tokens))
+
+        if len(self.children) == 0:
+            raise_error("PartMathExpressionNode didn't find a proper value", self.position)
+
+        if len(self.children) == 1 and self.children[0].__class__ is NegativeNumber:
+            raise_error("PartMathExpressionNode found a minus which wasn't followed by a proper value", self.position)
 
     def get_value(self):
         return self.value
@@ -789,7 +858,7 @@ class PartMathExpressionNode(Node):
     def execute(self):
         if self.is_negative:
             if isinstance(self.children[1].execute(), str):
-                raise TypeError("Seems like you are trying to get a negative of a string, eh?")
+                raise_error("Seems like you are trying to get a negative of a string", self.position)
             else:
                 return -1*self.children[1].execute()
         else:
@@ -798,7 +867,7 @@ class PartMathExpressionNode(Node):
 class TextNode(Node):
     def __init__(self, tokens):
         super().__init__(tokens)
-        self.type = self.peekToken()
+        self.type = self.peekTokenType()
         self.parse()
 
     def parse(self):
@@ -814,10 +883,11 @@ class TextNode(Node):
 class ValueNode(Node):
     def __init__(self, tokens):
         super().__init__(tokens)
-        self.type = self.peekToken()
+        self.type = self.peekTokenType()
         self.parse()
 
     def parse(self):
+        self.position = self.peekTokenPosition()
         self.value = self.popToken().value
 
     def get_value(self):
@@ -840,13 +910,13 @@ class ValueNode(Node):
                     global gameVarDict
                     return gameVarDict[self.value]
                 except:
-                    raise NameError("Variable not found in gamedict", self.value)
+                    raise_error("Variable not found in gamedict - " + self.value, self.position)
             else:
                 try:
                     global localVarDict
                     return localVarDict[self.value]
                 except:
-                    raise NameError(self.value + " was not found in variable dict")
+                    raise_error("Variable not found in vardict - " + self.value, self.position)
         return self.value
 
 class NegativeNumber(Node):
@@ -860,13 +930,15 @@ class BracketedExpression(Node):
         self.parse()
 
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         if self.popToken().type != "LEFT_ROUND":
-            raise SyntaxError("Bracketed expression seems not to be open")
+            raise_error("Bracketed expression seems not to be open", self.position)
 
         self.children.append(super().create_subtree(self.tokens))
 
         if self.popToken().type != "RIGHT_ROUND":
-            raise SyntaxError("Bracketed expression seems not to be closed")
+            raise_error("Bracketed expression seems not to be closed", self.position)
 
     def execute(self):
         return self.children[0].execute()
@@ -878,8 +950,10 @@ class PlayersHeaderNode(Node):
         self.parse()
 
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         if self.popToken().type != "PLAYERS":
-            raise SyntaxError("Missing PLAYERS in PLAYERS. How?")
+            raise_error("Missing PLAYERS in PLAYERS. How?", self.position)
         
         self.children.append(super().create_subtree(self.tokens))
 
@@ -894,14 +968,16 @@ class GameHeaderNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken().type != "GAME":
-            raise SyntaxError("Missing GAME in GAME. How?")
-        if self.popToken().type != "COLON":
-            raise SyntaxError("Missing COLON after WIN. How?")
+        self.position = self.peekTokenPosition()
 
-        while self.peekToken() not in header_names:
+        if self.popToken().type != "GAME":
+            raise_error("Missing GAME in GAME. How?", self.position)
+        if self.popToken().type != "COLON":
+            raise_error("Missing COLON after WIN. How?", self.position)
+
+        while self.peekTokenType() not in header_names:
             self.children.append(VariableInitNode(self.tokens))
-            if self.peekToken() == "SEMICOLON":
+            if self.peekTokenType() == "SEMICOLON":
                 self.popToken()
 
     def execute(self):
@@ -915,14 +991,16 @@ class IndividualHeaderNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken().type != "INDIVIDUAL":
-            raise SyntaxError("Missing INDIVIDUAL in INDIVIDUAL. How?")
-        if self.popToken().type != "COLON":
-            raise SyntaxError("Missing colon after  WIN.")
+        self.position = self.peekTokenPosition()
 
-        while self.peekToken() not in header_names:
+        if self.popToken().type != "INDIVIDUAL":
+            raise_error("Missing INDIVIDUAL in INDIVIDUAL. How?", self.position)
+        if self.popToken().type != "COLON":
+            raise_error("Missing colon after  WIN.", self.position)
+
+        while self.peekTokenType() not in header_names:
             self.children.append(VariableInitNode(self.tokens))
-            if self.peekToken() == "SEMICOLON":
+            if self.peekTokenType() == "SEMICOLON":
                 self.popToken()
 
     def execute(self):
@@ -936,14 +1014,16 @@ class FunctionsHeaderNode(Node):
         self.parse()
 
     def parse(self):
-        if self.popToken().type != "FUNCTIONS":
-            raise SyntaxError("Missing FUNCTIONS in FUNCTIONS. How?")
-        if self.popToken().type != "COLON":
-            raise SyntaxError("Missing colon after FUNCTIONS.")
+        self.position = self.peekTokenPosition()
 
-        while self.peekToken() not in header_names:
+        if self.popToken().type != "FUNCTIONS":
+            raise_error("Missing FUNCTIONS in FUNCTIONS. How?", self.position)
+        if self.popToken().type != "COLON":
+            raise_error("Missing colon after FUNCTIONS.", self.position)
+
+        while self.peekTokenType() not in header_names:
             self.children.append(FunctionInitNode(self.tokens))
-            if self.peekToken() == "SEMICOLON":
+            if self.peekTokenType() == "SEMICOLON":
                 self.popToken()
 
     def execute(self):
@@ -957,10 +1037,12 @@ class RunHeaderNode(Node):
         self.parse()
 
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         if self.popToken().type != "RUN":
-            raise SyntaxError("Missing RUN in RUN. How?")
+            raise_error("Missing RUN in RUN. How?", self.position)
         if self.popToken().type != "COLON":
-            raise SyntaxError("Missing colon after RUN.")
+            raise_error("Missing colon after RUN.", self.position)
 
         self.children.append(BlockOfCode(self.tokens))
 
@@ -975,17 +1057,19 @@ class WinHeaderNode(Node):
         self.parse()
 
     def parse(self):
+        self.position = self.peekTokenPosition()
+
         if self.popToken().type != "WIN":
-            raise SyntaxError("Missing WIN in WIN. How?")
+            raise_error("Missing WIN in WIN. How?", self.position)
         if self.popToken().type != "COLON":
-            raise SyntaxError("Missing colon after WIN.")
+            raise_error("Missing colon after WIN.", self.position)
         if self.popToken().type != "LEFT_SQUARE":
-            raise SyntaxError("Missing [ after WIN:.")
+            raise_error("Missing [ after WIN:.", self.position)
 
         self.children.append(Condition(self.tokens))
 
         if self.popToken().type != "RIGHT_SQUARE":
-            raise SyntaxError("Missing ] after WIN.")
+            raise_error("Missing ] after WIN.", self.position)
 
     def execute(self):
         global analysedPlayer
