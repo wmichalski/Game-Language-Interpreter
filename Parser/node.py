@@ -291,10 +291,6 @@ class ReturnNode(Node):
     def execute(self):
         analysedFunc.returnStatus = 1
         return self.children[0].execute()
-        # i jak dojdziemy do return to warto by bylo jakies info zwrocic do execute w block of code zeby dalej nie grzebac i od razu zakonczyc
-        # ale sraka boze
-        # tylko uwazac na zagniezdzenia damn
-
 
 class VariableInitNode(Node):
     def __init__(self, tokens):
@@ -1051,7 +1047,7 @@ class IndividualHeaderNode(Node):
             raise_error("Missing INDIVIDUAL in INDIVIDUAL. How?",
                         self.position)
         if self.popToken().type != "COLON":
-            raise_error("Missing colon after  WIN.", self.position)
+            raise_error("Missing colon after WIN.", self.position)
 
         while self.peekTokenType() not in header_names:
             self.children.append(VariableInitNode(self.tokens))
