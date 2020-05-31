@@ -5,7 +5,7 @@ class ErrorManager(Exception):
     def __init__(self, message):
         self.message = message
 
-FAULTY_CODE_PEEK = 25
+FAULTY_CODE_PEEK = 40
 
 def manage_error(file_manager, position):
     faulty_code = file_manager.get_errory_part(position, FAULTY_CODE_PEEK)

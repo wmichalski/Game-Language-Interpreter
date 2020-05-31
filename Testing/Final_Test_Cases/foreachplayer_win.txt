@@ -1,0 +1,31 @@
+PLAYERS 4
+
+var player.token = 4;
+
+def getScore(playerScore)
+{
+    return playerScore*2;
+}
+
+def analysePlayer(playerScore)
+{
+    return getScore(playerScore)
+}
+
+var iter = 1;
+forEachPlayer(1)
+{
+    print(analysePlayer(player.token + iter));
+    player.token = analysePlayer(player.token + iter);
+    iter = iter + 1;
+}
+
+print("");
+
+forEachPlayer(player.token < 13)
+{
+    player.token = 5;
+}
+
+WIN:
+[player.token > 11 and player.token < 13 or player.token == 16]

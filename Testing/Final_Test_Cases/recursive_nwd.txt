@@ -17,14 +17,10 @@ def nwd(c,d)
     }
 }
 
-var a = 20;
-var b = 40;
-
 print(nwd(28,70))
 print(nwd(1,12))
 print(nwd(66,102))
 print(nwd(12,18))
 print(nwd(10000, 1000))
-
-print(a)
-print(b)
+print(nwd(8941, 785))
+print(nwd(785, 8941))

@@ -14,7 +14,7 @@ from Lexer.token import Token
 def loop_test(fm):
     tokeniser = Tokeniser(fm)
     analysed_tokens = []
-    analysed_tokens.append(Token("START_OF_FILE", ""))
+    analysed_tokens.append(Token("START_OF_FILE", "", 0))
     while (analysed_tokens[-1].type is not "END_OF_FILE"):
         analysed_tokens.append(tokeniser.get_token())
 

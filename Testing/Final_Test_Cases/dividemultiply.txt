@@ -1,5 +1,3 @@
-FUNCTIONS:
-
 def divideBy(x, y)
 {
     var z = x/y;
@@ -11,8 +9,6 @@ def multiplyBy(x, y)
     var z = divideBy(1,y);
     return x/z;
 }
-
-RUN:
 
 var a = 5;
 var b = 4;

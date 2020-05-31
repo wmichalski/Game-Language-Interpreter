@@ -1,0 +1,57 @@
+PLAYERS 10
+
+var player.inPrison = 1
+var player.tries = 0;
+
+var game.rollChance = 4
+
+def prisonRoll()
+{
+    if (roll(game.rollChance) == game.rollChance-1)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+def someoneStillInPrison()
+{
+    forEachPlayer(1)
+    {
+        if (player.inPrison == 1)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+def getMinTries()
+{
+    var min = 99999;
+    forEachPlayer(1)
+    {
+        if (player.tries < min)
+        {
+            min = player.tries;
+        }
+    }
+    return min;
+}
+
+while(someoneStillInPrison())
+{
+    forEachPlayer(player.inPrison)
+    {
+        player.tries = player.tries + 1;
+        if(prisonRoll())
+        {
+            player.inPrison = 0;
+        }
+    }
+}
+
+var minTries = getMinTries();
+
+WIN:
+[player.tries == minTries]
