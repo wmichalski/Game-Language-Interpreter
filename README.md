@@ -20,4 +20,4 @@ Run output unit tests with
 Run program with your own script with
 ```python3 main.py [name of file]```
 
-Interesting example program are in Testing/Final_Test_Cases
+Interesting example programs are in Testing/Final_Test_Cases
