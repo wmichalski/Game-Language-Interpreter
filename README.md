@@ -3,7 +3,7 @@
 Creating my own programming language for running simulations of simple board games.
 
 Run lexer unit tests with
-```python3 -m unittest Testing/Llexer_unit_tests.py```
+```python3 -m unittest Testing/lexer_unit_tests.py```
 
 Run lexer acceptance tests with
 ```python3 -m unittest Testing/lexer_script_tests.py```
