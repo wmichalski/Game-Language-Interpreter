@@ -1,4 +1,4 @@
-# tkom-project
+# Game-Language-Interpreter
 
 Creating my own programming language for running simulations of simple board games.
 
