@@ -1,0 +1,22 @@
+def power(base, exp)
+{
+    if(exp > 0)
+    {
+        return base*power(base, exp-1);
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+var a = power(2,3);
+print(a);
+
+var b = power(3,2);
+print(b);
+
+var c = 3*power(10,2) + 1*power(16,0) + power(2,6);
+print(c);
+
+print(power(power(2,3),2));

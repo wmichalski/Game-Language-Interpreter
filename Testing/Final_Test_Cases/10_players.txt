@@ -1,0 +1,35 @@
+PLAYERS 10
+
+GAME:
+var game.tokens = 10;
+var game.finished = 0;
+
+INDIVIDUAL:
+var player.xD = 1;
+
+RUN:
+var finished = 0;
+
+while(!finished)
+{
+    forEachPlayer(1)
+    {
+        var rolledx = 0;
+        while(rolledx < 5)
+        {
+            rolledx = roll(10);
+        }
+        player.xD = player.xD + rolledx;
+        print(player.name)
+        print(player.xD);
+        if(player.xD > 20)
+        {
+            finished = 1;
+            break;
+        }
+    }
+    print("--")
+}
+
+WIN:
+[player.xD > 20]

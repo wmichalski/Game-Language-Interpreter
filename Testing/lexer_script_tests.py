@@ -13,7 +13,7 @@ class AcceptanceScriptTester(unittest.TestCase):
     def loop_test(self, fm):
         tokeniser = Tokeniser(fm)
         analysed_tokens = []
-        analysed_tokens.append(Token("START_OF_FILE", ""))
+        analysed_tokens.append(Token("START_OF_FILE", "", 0))
         while (analysed_tokens[-1].type is not "END_OF_FILE"):
             analysed_tokens.append(tokeniser.get_token())
 
@@ -25,7 +25,7 @@ class AcceptanceScriptTester(unittest.TestCase):
             self.assertEqual(ex_value, result.value)
 
     def test1(self):
-        with FileManager("Testing/test1.txt") as file_manager:
+        with FileManager("Testing/Lexer_Test_Cases/test1.txt") as file_manager:
             tokens = self.loop_test(file_manager)
 
             expected = [
@@ -70,7 +70,7 @@ class AcceptanceScriptTester(unittest.TestCase):
             self.compare_tokens(expected, tokens)
 
     def test2(self):
-        with FileManager("Testing/test2.txt") as file_manager:
+        with FileManager("Testing/Lexer_Test_Cases/test2.txt") as file_manager:
             tokens = self.loop_test(file_manager)
 
             expected = [
@@ -143,7 +143,7 @@ class AcceptanceScriptTester(unittest.TestCase):
             self.compare_tokens(expected, tokens)
 
     def test3(self):
-        with FileManager("Testing/test3.txt") as file_manager:
+        with FileManager("Testing/Lexer_Test_Cases/test3.txt") as file_manager:
             tokens = self.loop_test(file_manager)
 
             expected = [

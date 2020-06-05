@@ -1,7 +1,8 @@
 class Token:
-    def __init__(self, token_type, value=None):
+    def __init__(self, token_type, value=None, position=None):
         self.type = token_type
         self.value = value
+        self.position = position-len(self.value)
 
 
 keyword_types = {
@@ -17,6 +18,7 @@ keyword_types = {
     "roll": "ROLL",
     "else": "ELSE",
     "break": "BREAK",
+    "print": "PRINT",
     "PLAYERS": "PLAYERS",
     "GAME": "GAME",
     "INDIVIDUAL": "INDIVIDUAL",
@@ -42,7 +44,8 @@ accepted_special_signs = {
     ":": "COLON",
     "!": "LOGICAL_NOT",
     ";": "SEMICOLON",
-    ",": "COMMA"
+    ",": "COMMA",
+    "\"": "QUOTE"
 }
 
 comparison_operators = {

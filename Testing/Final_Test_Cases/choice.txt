@@ -1,0 +1,51 @@
+PLAYERS 3
+
+var player.tokens = 15;
+var player.won = 0;
+
+var game.over = 0;
+
+def isGameOver()
+{
+    forEachPlayer(1)
+    {
+        if(player.tokens < 0)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+while(!game.over)
+{
+    game.over = isGameOver();
+
+    if(game.over)
+    {
+        break;
+    }
+    
+    forEachPlayer(1)
+    {
+        print(player.name)
+        print(player.tokens)
+        choice(1)
+        {
+            [player.tokens > 10] {chosen.tokens = chosen.tokens - 3;}
+            [player.tokens >= 5] {chosen.tokens = chosen.tokens - 2; player.tokens = player.tokens+1;}
+            [player.tokens < 5] {player.tokens = player.tokens + 1;}
+        }
+        print("===")
+        forEachPlayer(1)
+        {
+            print(player.name)
+            print(player.tokens)
+        }
+        print("===================")
+    }
+}
+
+WIN:
+[player.tokens > 10]
+

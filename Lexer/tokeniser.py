@@ -58,9 +58,9 @@ class Tokeniser:
                 chars += self.fm.get_chars(1)
 
         if chars in keyword_types.keys():
-            return Token(keyword_types[chars], chars)
+            return Token(keyword_types[chars], chars, self.fm.get_position())
         else:
-            return Token("IDENTIFIER", chars)
+            return Token("IDENTIFIER", chars, self.fm.get_position())
 
     def get_number_token(self):
         chars = ""
@@ -79,12 +79,12 @@ class Tokeniser:
                         self.raise_error("The token is too long", chars)
                     chars += self.fm.get_chars(1)
 
-                return Token("REAL_NUMBER", chars)
+                return Token("REAL_NUMBER", chars, self.fm.get_position())
             
             if self.fm.peek_chars(1).isdigit():
                 self.raise_error("ERROR - NONZERO NUMBER STARTS WITH A 0", chars)
 
-            return Token("REAL_NUMBER", chars) # not sure how to treat a zero
+            return Token("REAL_NUMBER", chars, self.fm.get_position()) 
 
         while (self.fm.peek_chars(1).isdigit()):
             counter += 1
@@ -100,18 +100,36 @@ class Tokeniser:
                 if counter > self.MAX_TOKEN_LENGTH:
                     self.raise_error("The token is too long", chars)
                 chars += self.fm.get_chars(1)
-            return Token("REAL_NUMBER", chars)
+            return Token("REAL_NUMBER", chars, self.fm.get_position())
 
-        return Token("NATURAL_NUMBER", chars)
+        return Token("NATURAL_NUMBER", chars, self.fm.get_position())
+
+    def last_char(self, chars):
+        if len(chars) == 0:
+            return None
+        else:
+            return chars[-1]
 
     def get_special_sign(self):
         chars = ""
         if self.fm.peek_chars(2) in comparison_operators:
             chars += self.fm.get_chars(2)
-            return Token(comparison_operators[chars], chars)
+            return Token(comparison_operators[chars], chars, self.fm.get_position())
+
+        if self.fm.peek_chars(1) == "\"":
+            self.fm.get_chars(1)
+            while not (self.fm.peek_chars(1) == "\"" and self.last_char(chars) != "\\"):
+                if self.fm.peek_chars(1) == "\\":
+                    self.fm.get_chars(1)
+                chars += self.fm.get_chars(1)
+                if len(chars) > self.MAX_TOKEN_LENGTH:
+                    self.raise_error("The token is too long", chars)
+            self.fm.get_chars(1)
+            return Token("TEXT", chars, self.fm.get_position())
 
         chars += self.fm.get_chars(1)
-        return Token(accepted_special_signs[chars], chars)
+
+        return Token(accepted_special_signs[chars], chars, self.fm.get_position())
 
     def ignore_spaces(self):
         while(self.fm.peek_chars(1).isspace()):
@@ -125,7 +143,7 @@ class Tokeniser:
         self.raise_error("ERROR - UNEXPECTED CHAR", chars)
 
     def end_of_file(self):
-        return Token("END_OF_FILE", "")
+        return Token("END_OF_FILE", "", self.fm.get_position())
 
     def raise_error(self, message, value):
         error_manager.manage_error(self.fm, value)

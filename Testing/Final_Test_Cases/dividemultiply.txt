@@ -1,0 +1,17 @@
+def divideBy(x, y)
+{
+    var z = x/y;
+    return z;
+}
+
+def multiplyBy(x, y)
+{
+    var z = divideBy(1,y);
+    return x/z;
+}
+
+var a = 5;
+var b = 4;
+
+print(divideBy(a,b));
+print(multiplyBy(a,b));
